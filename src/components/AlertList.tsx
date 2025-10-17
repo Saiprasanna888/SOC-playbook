@@ -4,9 +4,10 @@ import { AlertPlaybook, AlertCategory } from '@/types/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Filter, ChevronRight, Zap, Terminal, Wrench, User, BookOpen } from 'lucide-react'; // <-- Added User and BookOpen
+import { Filter, ChevronRight, Zap, Terminal, Wrench, User, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import MobileFilter from './MobileFilter'; // Import the new component
 
 interface AlertListProps {
   searchTerm: string;
@@ -63,10 +64,21 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
     return alerts;
   }, [searchTerm, activeCategory]);
 
+  const allCategories = ['All', ...categories] as (AlertCategory | 'All')[];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      {/* Sidebar for Filters */}
-      <div className="lg:col-span-1">
+      {/* Mobile Filter Button (Visible on small screens) */}
+      <div className="lg:hidden mb-4">
+        <MobileFilter 
+          categories={allCategories}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+        />
+      </div>
+
+      {/* Sidebar for Filters (Hidden on small screens) */}
+      <div className="hidden lg:block lg:col-span-1">
         <Card className="sticky top-20 bg-card/80 backdrop-blur-sm border-border">
           <CardHeader>
             <CardTitle className="text-lg flex items-center text-primary">
@@ -77,7 +89,7 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-              {['All', ...categories].map((category) => (
+              {allCategories.map((category) => (
                 <Button
                   key={category}
                   variant="ghost"
@@ -97,8 +109,8 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
         </Card>
       </div>
 
-      {/* Alert Results */}
-      <div className="lg:col-span-3">
+      {/* Alert Results (Takes full width on mobile, 3/4 on desktop) */}
+      <div className="lg:col-span-3 col-span-4">
         <h2 className="text-2xl font-bold mb-6 text-foreground">
           {activeCategory === 'All' ? 'All Playbooks' : `${activeCategory} Alerts`} 
           <span className="text-muted-foreground ml-2 font-normal text-xl">({filteredAlerts.length})</span>
@@ -136,18 +148,18 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
                       </CardDescription>
                       <div className="flex items-center justify-between">
                         <div className="flex space-x-2 text-muted-foreground text-sm">
-                          <span className="font-medium">Tools:</span>
+                          <span className="font-medium hidden sm:inline">Tools:</span>
                           {alert.tools.slice(0, 3).map((tool, index) => {
                             const Icon = toolIconMap[tool.split('/')[0]] || Zap;
                             return (
                               <Badge key={index} variant="outline" className="flex items-center space-x-1">
                                 <Icon className="w-3 h-3" />
-                                <span>{tool.split('/')[0]}</span>
+                                <span className="hidden sm:inline">{tool.split('/')[0]}</span>
                               </Badge>
                             );
                           })}
                           {alert.tools.length > 3 && (
-                            <span className="text-xs text-muted-foreground self-center">
+                            <span className="text-xs text-muted-foreground self-center hidden sm:inline">
                               +{alert.tools.length - 3} more
                             </span>
                           )}
