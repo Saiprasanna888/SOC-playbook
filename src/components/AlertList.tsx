@@ -7,18 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, ChevronRight, Zap, Terminal, Wrench, User, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import MobileFilter from './MobileFilter'; // Import the new component
+import MobileFilter from './MobileFilter';
 
 interface AlertListProps {
   searchTerm: string;
 }
 
+type SeverityLevel = 'All' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
 // Helper function to determine severity style
-const getSeverity = (alert: AlertPlaybook) => {
+const getSeverity = (alert: AlertPlaybook): { label: SeverityLevel; variant: string; color: string } => {
   const name = alert.name.toLowerCase();
   const description = alert.description.toLowerCase();
 
-  if (name.includes('critical') || name.includes('ransomware') || name.includes('golden ticket') || description.includes('critical') || description.includes('immediate suspension')) {
+  if (name.includes('critical') || name.includes('ransomware') || name.includes('golden ticket') || description.includes('critical') || description.includes('immediate suspension') || description.includes('critical')) {
     return { label: 'CRITICAL', variant: 'destructive', color: 'bg-red-600 hover:bg-red-700' };
   }
   if (name.includes('compromise') || name.includes('lateral movement') || name.includes('web shell') || description.includes('compromise') || description.includes('high priority')) {
@@ -39,8 +41,17 @@ const toolIconMap: { [key: string]: React.ElementType } = {
   'Mail Server': BookOpen,
 };
 
+const severityOptions: { label: SeverityLevel, color: string }[] = [
+  { label: 'All', color: 'bg-muted text-muted-foreground' },
+  { label: 'CRITICAL', color: 'bg-red-600 hover:bg-red-700' },
+  { label: 'HIGH', color: 'bg-orange-500 hover:bg-orange-600' },
+  { label: 'MEDIUM', color: 'bg-yellow-500 hover:bg-yellow-600' },
+  { label: 'LOW', color: 'bg-green-500 hover:bg-green-600' },
+];
+
 const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
   const [activeCategory, setActiveCategory] = useState<AlertCategory | 'All'>('All');
+  const [activeSeverity, setActiveSeverity] = useState<SeverityLevel>('All'); // New state for severity
 
   const filteredAlerts = useMemo(() => {
     let alerts = mockAlerts;
@@ -50,7 +61,12 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
       alerts = alerts.filter(alert => alert.category === activeCategory);
     }
 
-    // 2. Filter by Search Term
+    // 2. Filter by Severity
+    if (activeSeverity !== 'All') {
+      alerts = alerts.filter(alert => getSeverity(alert).label === activeSeverity);
+    }
+
+    // 3. Filter by Search Term
     if (searchTerm.trim()) {
       const lowerCaseSearch = searchTerm.toLowerCase();
       alerts = alerts.filter(alert => 
@@ -62,7 +78,7 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
     }
 
     return alerts;
-  }, [searchTerm, activeCategory]);
+  }, [searchTerm, activeCategory, activeSeverity]);
 
   const allCategories = ['All', ...categories] as (AlertCategory | 'All')[];
 
@@ -74,6 +90,9 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
           categories={allCategories}
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}
+          severityOptions={severityOptions}
+          activeSeverity={activeSeverity}
+          setActiveSeverity={setActiveSeverity}
         />
       </div>
 
@@ -83,27 +102,54 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center text-primary">
               <Filter className="w-4 h-4 mr-2" />
-              Playbook Categories
+              Playbook Filters
             </CardTitle>
-            <CardDescription>Filter by MITRE ATT&CK stage or security domain.</CardDescription>
+            <CardDescription>Filter by security domain and severity level.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-              {allCategories.map((category) => (
-                <Button
-                  key={category}
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start text-left h-auto py-2 px-3 transition-all duration-150",
-                    activeCategory === category 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-                      : "text-muted-foreground hover:bg-accent"
-                  )}
-                  onClick={() => setActiveCategory(category as AlertCategory | 'All')}
-                >
-                  {category}
-                </Button>
-              ))}
+            <div className="space-y-6">
+              {/* Severity Filter */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2">Severity</h3>
+                <div className="flex flex-wrap gap-2">
+                  {severityOptions.map((severity) => (
+                    <Badge
+                      key={severity.label}
+                      className={cn(
+                        "cursor-pointer transition-all duration-150 text-xs font-medium uppercase px-3 py-1",
+                        severity.label === activeSeverity 
+                          ? severity.color + " text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent border border-border"
+                      )}
+                      onClick={() => setActiveSeverity(severity.label)}
+                    >
+                      {severity.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2">Category</h3>
+                <div className="space-y-1 max-h-[40vh] overflow-y-auto pr-2">
+                  {allCategories.map((category) => (
+                    <Button
+                      key={category}
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start text-left h-auto py-2 px-3 transition-all duration-150",
+                        activeCategory === category 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                          : "text-muted-foreground hover:bg-accent"
+                      )}
+                      onClick={() => setActiveCategory(category as AlertCategory | 'All')}
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -119,7 +165,7 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
         {filteredAlerts.length === 0 ? (
           <div className="text-center py-16 border border-dashed rounded-lg mt-8 bg-muted/20">
             <p className="text-muted-foreground text-lg">
-              No playbooks found matching "{searchTerm}" in the {activeCategory} category.
+              No playbooks found matching your criteria.
             </p>
           </div>
         ) : (
