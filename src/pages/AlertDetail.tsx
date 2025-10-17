@@ -4,7 +4,7 @@ import { mockAlerts } from '@/data/mockAlerts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Zap, Terminal, Wrench, AlertTriangle, Shield, BookOpen, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Terminal, Wrench, AlertTriangle, Shield, BookOpen, Copy, Check } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -49,14 +49,6 @@ const AlertDetail: React.FC = () => {
 
   const severity = getSeverity(alert);
 
-  const handleAISuggestion = () => {
-    toast({
-      title: "AI Suggestion Requested",
-      description: "Dyad AI is generating deeper investigation ideas for this alert...",
-      duration: 3000,
-    });
-  };
-
   const handleCopy = (query: string, index: number) => {
     navigator.clipboard.writeText(query);
     setCopiedQueryId(index);
@@ -94,10 +86,6 @@ const AlertDetail: React.FC = () => {
             Back to Dictionary
           </Button>
         </Link>
-        <Button onClick={handleAISuggestion} variant="default" className="flex items-center bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <Zap className="w-4 h-4 mr-2 animate-pulse" />
-          AI Suggestion (Deep Dive)
-        </Button>
       </div>
 
       <Card className={cn("shadow-2xl border-l-8 transition-all duration-500", severity.color)}>
