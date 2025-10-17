@@ -4,9 +4,27 @@ import { mockAlerts } from '@/data/mockAlerts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Zap, Terminal, Wrench, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Zap, Terminal, Wrench, AlertTriangle, Shield, BookOpen } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
+
+// Helper function to determine severity style (copied from AlertList for consistency)
+const getSeverity = (alert: typeof mockAlerts[0]) => {
+  const name = alert.name.toLowerCase();
+  const description = alert.description.toLowerCase();
+
+  if (name.includes('critical') || name.includes('ransomware') || name.includes('golden ticket') || description.includes('critical') || description.includes('immediate suspension')) {
+    return { label: 'CRITICAL', variant: 'destructive', color: 'bg-red-600 hover:bg-red-700' };
+  }
+  if (name.includes('compromise') || name.includes('lateral movement') || name.includes('web shell') || description.includes('compromise') || description.includes('high priority')) {
+    return { label: 'HIGH', variant: 'default', color: 'bg-orange-500 hover:bg-orange-600' };
+  }
+  if (name.includes('unusual') || name.includes('failed') || description.includes('unusual') || description.includes('medium')) {
+    return { label: 'MEDIUM', variant: 'secondary', color: 'bg-yellow-500 hover:bg-yellow-600' };
+  }
+  return { label: 'LOW', variant: 'outline', color: 'bg-green-500 hover:bg-green-600' };
+};
 
 const AlertDetail: React.FC = () => {
   const { alertId } = useParams<{ alertId: string }>();
@@ -26,6 +44,8 @@ const AlertDetail: React.FC = () => {
     );
   }
 
+  const severity = getSeverity(alert);
+
   const handleAISuggestion = () => {
     toast({
       title: "AI Suggestion Requested",
@@ -36,20 +56,23 @@ const AlertDetail: React.FC = () => {
 
   const renderList = (title: string, items: string[], Icon: React.ElementType) => (
     <div className="mb-6">
-      <h3 className="text-xl font-semibold mb-3 flex items-center text-primary dark:text-primary-foreground">
-        <Icon className="w-5 h-5 mr-2" />
+      <h3 className="text-xl font-semibold mb-3 flex items-center text-foreground">
+        <Icon className="w-5 h-5 mr-2 text-primary" />
         {title}
       </h3>
-      <ul className="space-y-2 list-disc list-inside pl-4 text-gray-700 dark:text-gray-300">
+      <ul className="space-y-3 list-none pl-0 text-gray-700 dark:text-gray-300">
         {items.map((item, index) => (
-          <li key={index}>{item}</li>
+          <li key={index} className="flex items-start">
+            <span className="text-primary mr-2 font-bold">{index + 1}.</span>
+            <span className="flex-1">{item}</span>
+          </li>
         ))}
       </ul>
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <Link to="/">
           <Button variant="outline" className="flex items-center">
@@ -57,52 +80,59 @@ const AlertDetail: React.FC = () => {
             Back to Dictionary
           </Button>
         </Link>
-        <Button onClick={handleAISuggestion} variant="secondary" className="flex items-center">
+        <Button onClick={handleAISuggestion} variant="secondary" className="flex items-center bg-primary hover:bg-primary/90 text-primary-foreground">
           <Zap className="w-4 h-4 mr-2" />
-          AI Suggestion
+          AI Suggestion (Deep Dive)
         </Button>
       </div>
 
-      <Card className="shadow-lg">
-        <CardHeader className="border-b dark:border-gray-800">
+      <Card className="shadow-xl border-l-4" style={{ borderLeftColor: severity.color.split(' ')[0].replace('bg-', '#') }}>
+        <CardHeader className="border-b border-border/50 p-6">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-3xl font-extrabold">{alert.name}</CardTitle>
-              <Badge variant="secondary" className="w-fit mt-2 text-sm">{alert.category}</Badge>
+              <CardTitle className="text-4xl font-extrabold text-foreground">{alert.name}</CardTitle>
+              <div className="flex space-x-2 mt-3">
+                <Badge variant="secondary" className="w-fit text-sm font-medium bg-muted text-muted-foreground">
+                  <Shield className="w-3 h-3 mr-1" /> {alert.category}
+                </Badge>
+                <Badge className={cn("text-sm font-medium uppercase", severity.color)}>
+                  Severity: {severity.label}
+                </Badge>
+              </div>
             </div>
           </div>
-          <p className="text-muted-foreground mt-4 italic">{alert.description}</p>
+          <p className="text-muted-foreground mt-4 italic text-lg">{alert.description}</p>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-8 px-6">
           
-          {renderList("Possible Causes", alert.causes, AlertTriangle)}
-          <Separator className="my-6" />
+          {renderList("Possible Causes (Why did this happen?)", alert.causes, AlertTriangle)}
+          <Separator className="my-8" />
 
-          {renderList("Step-by-Step Actions", alert.actions, Zap)}
-          <Separator className="my-6" />
+          {renderList("Step-by-Step Response Actions", alert.actions, BookOpen)}
+          <Separator className="my-8" />
 
           <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-3 flex items-center text-primary dark:text-primary-foreground">
-              <Terminal className="w-5 h-5 mr-2" />
+            <h3 className="text-xl font-semibold mb-3 flex items-center text-foreground">
+              <Terminal className="w-5 h-5 mr-2 text-primary" />
               Example Queries / Commands
             </h3>
             <div className="space-y-4">
               {alert.queries.map((q, index) => (
-                <div key={index} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
-                  <p className="font-mono text-sm text-gray-800 dark:text-gray-200 break-all">
+                <div key={index} className="bg-muted/50 p-4 rounded-lg border border-border/50 shadow-inner">
+                  <p className="font-mono text-sm text-foreground break-all whitespace-pre-wrap">
                     {q.query}
                   </p>
-                  <Badge className="mt-2 bg-blue-500 hover:bg-blue-600">{q.tool}</Badge>
+                  <Badge className="mt-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border/50">{q.tool}</Badge>
                 </div>
               ))}
             </div>
           </div>
-          <Separator className="my-6" />
+          <Separator className="my-8" />
 
-          {renderList("Recommended Tools", alert.tools, Wrench)}
-          <Separator className="my-6" />
+          {renderList("Recommended Tools for Investigation", alert.tools, Wrench)}
+          <Separator className="my-8" />
 
-          <div className="mb-6">
+          <div className="mb-6 p-4 border border-red-500/50 bg-red-500/10 rounded-lg">
             <h3 className="text-xl font-semibold mb-3 flex items-center text-red-600 dark:text-red-400">
               <AlertTriangle className="w-5 h-5 mr-2" />
               Escalation Criteria & Mitigation

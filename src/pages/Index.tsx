@@ -1,13 +1,15 @@
-import { MadeWithDyad } from "@/components/made-with-dyad";
+import React, { useState } from 'react';
 import Layout from "@/components/Layout";
 import AlertList from "@/components/AlertList";
 
 const Index = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+
   return (
-    <Layout>
+    <Layout searchTerm={searchTerm} onSearchChange={setSearchTerm}>
       <div className="space-y-8">
         <header className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl text-foreground">
             SOC Analyst Alert Dictionary
           </h1>
           <p className="text-lg text-muted-foreground mt-2">
@@ -15,9 +17,8 @@ const Index = () => {
           </p>
         </header>
         
-        <AlertList />
+        <AlertList searchTerm={searchTerm} />
       </div>
-      <MadeWithDyad />
     </Layout>
   );
 };
