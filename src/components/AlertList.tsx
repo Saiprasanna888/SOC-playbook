@@ -122,8 +122,8 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
                       className={cn(
                         "cursor-pointer transition-all duration-150 text-xs font-medium uppercase px-3 py-1",
                         severity.label === activeSeverity 
-                          ? severity.color + " text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-accent border border-border"
+                          ? severity.color + " text-primary-foreground shadow-md scale-[1.05]"
+                          : "bg-muted text-muted-foreground hover:bg-accent border border-border hover:scale-[1.02]"
                       )}
                       onClick={() => setActiveSeverity(severity.label)}
                     >
@@ -144,8 +144,8 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
                       className={cn(
                         "w-full justify-start text-left h-auto py-2 px-3 transition-all duration-150",
                         activeCategory === category 
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-                          : "text-muted-foreground hover:bg-accent"
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       )}
                       onClick={() => setActiveCategory(category as AlertCategory | 'All')}
                     >
@@ -180,7 +180,7 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
                 <Link key={alert.id} to={`/alert/${alert.id}`}>
                   <Card 
                     className={cn(
-                      "transition-all duration-300 cursor-pointer border-l-4 hover:shadow-xl hover:scale-[1.01] hover:border-l-8",
+                      "transition-all duration-300 cursor-pointer border-l-4 hover:shadow-2xl hover:scale-[1.01] hover:border-l-8",
                       severity.color
                     )}
                   >

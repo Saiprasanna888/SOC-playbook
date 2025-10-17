@@ -61,14 +61,14 @@ const AlertDetail: React.FC = () => {
   };
 
   const renderList = (title: string, items: string[], Icon: React.ElementType) => (
-    <div className="mb-8 p-4 rounded-lg bg-muted/30 border border-border/50 shadow-inner">
+    <div className="mb-8 p-4 rounded-lg bg-muted/30 border border-border/50 shadow-inner transition-all duration-500 ease-out opacity-100 translate-y-0 hover:shadow-lg">
       <h3 className="text-xl font-bold mb-4 flex items-center text-foreground">
         <Icon className="w-5 h-5 mr-3 text-primary animate-pulse-slow" />
         {title}
       </h3>
       <ol className="space-y-4 list-none pl-0 text-gray-700 dark:text-gray-300">
         {items.map((item, index) => (
-          <li key={index} className="flex items-start border-l-2 border-primary/50 pl-4 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+          <li key={index} className="flex items-start border-l-2 border-primary/50 pl-4 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1 hover:border-primary/80 hover:scale-[1.005]">
             <span className="text-primary mr-3 font-extrabold text-lg">{index + 1}.</span>
             <span className="flex-1 text-base">{item}</span>
           </li>
@@ -120,7 +120,7 @@ const AlertDetail: React.FC = () => {
             </h3>
             <div className="space-y-4">
               {alert.queries.map((q, index) => (
-                <div key={index} className="bg-muted/50 p-4 rounded-lg border border-border/50 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center transition-all duration-300 hover:bg-muted/70">
+                <div key={index} className="bg-muted/50 p-4 rounded-lg border border-border/50 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center transition-all duration-300 hover:bg-muted/70 hover:shadow-lg">
                   <div className="flex-1 overflow-x-auto pr-4">
                     <p className="font-mono text-sm text-foreground whitespace-pre-wrap break-all">
                       {q.query}
@@ -148,7 +148,7 @@ const AlertDetail: React.FC = () => {
           {renderList("Recommended Tools for Investigation", alert.tools, Wrench)}
           <Separator className="my-8" />
 
-          <div className="mb-6 p-6 border border-red-500/50 bg-red-500/10 rounded-lg shadow-inner">
+          <div className="mb-6 p-6 border border-red-500/50 bg-red-500/10 rounded-lg shadow-inner transition-all duration-500 ease-out hover:shadow-lg">
             <h3 className="text-xl font-bold mb-3 flex items-center text-red-600 dark:text-red-400">
               <AlertTriangle className="w-5 h-5 mr-2 animate-ping-slow" />
               When to Escalate
