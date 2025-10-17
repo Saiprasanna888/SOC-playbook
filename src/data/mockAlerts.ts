@@ -1,7 +1,7 @@
 import { AlertPlaybook, AlertCategory } from "@/types/alert";
 
 export const mockAlerts: AlertPlaybook[] = [
-  // --- 1. Authentication & Access Alerts ---
+  // --- 1. Authentication & Access Alerts (Total: 5) ---
   {
     id: 'brute-force',
     name: 'Brute Force Attack Detected',
@@ -93,8 +93,31 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Identity Provider Logs', 'MFA Management Console', 'Communication Tools'],
     escalation: 'Escalate if the targeted user is high-privilege or if the attack persists after initial containment.',
   },
+  {
+    id: 'successful-login-new-location',
+    name: 'Successful Login from New Location',
+    category: 'Authentication & Access',
+    description: 'A user successfully logged in from a geographic location or network segment never before seen for that account.',
+    causes: [
+      'User traveling or working remotely (False Positive).',
+      'Compromised credentials used by an attacker.',
+      'New VPN endpoint or proxy usage.',
+    ],
+    actions: [
+      'Step 1: **Verify Location.** Check the geolocation data for the new IP address.',
+      'Step 2: **Contact User.** Contact the user out-of-band to confirm if they initiated the login from that location.',
+      'Step 3: **Check Device/Agent Health.** If the login is confirmed, ensure the endpoint security agent is healthy and running.',
+      'Step 4: **Containment (If Malicious).** If unauthorized, immediately suspend the account, invalidate the session, and force a password reset.',
+      'Step 5: **Audit Activity.** Review post-login activity (e.g., file access, email forwarding rules) for signs of compromise.',
+    ],
+    queries: [
+      { tool: 'Identity Logs', query: 'LoginEvents | where user="[USER]" and geo_location NOT IN (baseline_locations)' },
+    ],
+    tools: ['Identity Provider Logs', 'Communication Tools', 'GeoIP Database'],
+    escalation: 'Escalate if the user cannot be reached or if post-login malicious activity is detected.',
+  },
 
-  // --- 2. Network & Firewall Alerts ---
+  // --- 2. Network & Firewall Alerts (Total: 4) ---
   {
     id: 'dns-tunneling',
     name: 'DNS Tunneling Detected',
@@ -143,8 +166,54 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['NetFlow Analyzer', 'DLP System', 'Firewall Logs', 'EDR'],
     escalation: 'CRITICAL. Escalate immediately if sensitive data exfiltration is confirmed.',
   },
+  {
+    id: 'port-scan-detected',
+    name: 'Port Scan Detected',
+    category: 'Network & Firewall',
+    description: 'A host is rapidly scanning a range of IP addresses or ports on the network, indicating reconnaissance activity.',
+    causes: [
+      'Attacker mapping the internal network.',
+      'Vulnerability scanner or penetration testing tool (False Positive).',
+      'Misconfigured network monitoring tool.',
+    ],
+    actions: [
+      'Step 1: **Identify Scanner and Target.** Determine the source IP performing the scan and the target IP range.',
+      'Step 2: **Verify Legitimacy.** Check if the source IP belongs to an approved security tool or team (e.g., vulnerability scanner).',
+      'Step 3: **Containment.** If unauthorized, block the source IP at the internal firewall or network access control (NAC) layer.',
+      'Step 4: **Check for Follow-up Activity.** Review logs for any immediate connection attempts or exploitation attempts following the scan.',
+      'Step 5: **Forensic Analysis.** If the source is an internal host, isolate it and check for malware or unauthorized tools.',
+    ],
+    queries: [
+      { tool: 'IPS/Firewall Logs', query: 'event_type="Port_Scan" | group by src_ip, dest_ip_range' },
+    ],
+    tools: ['IPS/Firewall Console', 'NAC', 'Asset Inventory'],
+    escalation: 'Escalate if the scan is followed by successful exploitation attempts.',
+  },
+  {
+    id: 'connection-to-malicious-ip',
+    name: 'Connection to Known Malicious IP',
+    category: 'Network & Firewall',
+    description: 'An internal host initiated a connection to an external IP address identified as malicious (e.g., C2, malware distribution) by threat intelligence.',
+    causes: [
+      'Active malware infection on the internal host.',
+      'User accidentally browsing a malicious website.',
+    ],
+    actions: [
+      'Step 1: **Validate IOC.** Confirm the external IP is still listed as malicious in threat feeds.',
+      'Step 2: **Identify Source Host.** Determine the internal source IP, hostname, and the process that initiated the connection.',
+      'Step 3: **Containment.** Immediately isolate the source host from the network.',
+      'Step 4: **Perimeter Block.** Block the malicious external IP at the firewall/proxy.',
+      'Step 5: **Forensic Analysis.** Perform a deep scan on the isolated host to identify the malware or root cause of the connection.',
+      'Step 6: **IOC Search.** Search the entire environment (SIEM, EDR) for the malicious IP and any associated file hashes.',
+    ],
+    queries: [
+      { tool: 'Proxy/Firewall Logs', query: 'dest_ip="[MALICIOUS_IP]" AND action="Allowed"' },
+    ],
+    tools: ['Threat Intelligence Platform', 'Firewall/Proxy', 'EDR'],
+    escalation: 'High priority. Escalate if the connection resulted in a successful data transfer or payload download.',
+  },
 
-  // --- 3. Endpoint & Malware Alerts ---
+  // --- 3. Endpoint & Malware Alerts (Total: 5) ---
   {
     id: 'ransomware-behavior',
     name: 'Ransomware Behavior Detected',
@@ -214,8 +283,56 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'Network Logs', 'Sandbox Analysis'],
     escalation: 'Escalate if the process was used to download and execute a secondary payload.',
   },
+  {
+    id: 'persistence-mechanism-detected',
+    name: 'Persistence Mechanism Detected',
+    category: 'Endpoint & Malware',
+    description: 'Detection of unauthorized modifications to system startup locations, such as new registry Run keys, WMI event subscriptions, or scheduled tasks.',
+    causes: [
+      'Malware attempting to survive a reboot.',
+      'Attacker establishing long-term access.',
+      'Misconfigured legitimate application (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Mechanism.** Determine the exact persistence method (e.g., specific registry key, scheduled task name, WMI filter).',
+      'Step 2: **Isolate Host.** Immediately isolate the affected endpoint.',
+      'Step 3: **Remove Persistence.** Delete the unauthorized registry key, scheduled task, or WMI subscription.',
+      'Step 4: **Identify Payload.** Determine the file or command being executed by the persistence mechanism and analyze it for malicious intent.',
+      'Step 5: **Root Cause Analysis.** Investigate how the persistence was created (e.g., which process, user, or vulnerability was exploited).',
+      'Step 6: **Remediation.** If malicious, follow the Malware Eradication playbook and re-image the host.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'event_type="Registry_Modification" AND key_path CONTAINS "Run" AND process_name NOT IN (approved_list)' },
+    ],
+    tools: ['EDR Console', 'Registry Editor (Forensic)', 'SIEM'],
+    escalation: 'Escalate if the persistence mechanism is tied to a high-privilege account or critical server.',
+  },
+  {
+    id: 'unauthorized-powershell',
+    name: 'Unauthorized PowerShell Command',
+    category: 'Endpoint & Malware',
+    description: 'Execution of a highly suspicious or encoded PowerShell command, often used for reconnaissance, downloading payloads, or lateral movement.',
+    causes: [
+      'Attacker using PowerShell for post-exploitation.',
+      'Malware executing via a script.',
+      'Legitimate administrative script running outside of approved parameters (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Capture Command Line.** Capture the full, decoded command line arguments.',
+      'Step 2: **Isolate Host.** Immediately isolate the affected endpoint.',
+      'Step 3: **Analyze Script.** Decode and analyze the script content for malicious functions (e.g., network connections, credential dumping).',
+      'Step 4: **Check Parent Process.** Determine the parent process that launched PowerShell (e.g., a browser, a document).',
+      'Step 5: **IOC Extraction.** Extract any external IPs, domains, or file hashes mentioned in the script.',
+      'Step 6: **Remediation.** If malicious, follow the Malware Eradication playbook and enforce stricter PowerShell logging policies.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'process_name="powershell.exe" AND command_line CONTAINS ("-EncodedCommand" OR "IEX")' },
+    ],
+    tools: ['EDR Console', 'PowerShell Transcription Logs', 'Sandbox Analysis'],
+    escalation: 'Escalate if the command was used for credential theft or lateral movement.',
+  },
 
-  // --- 4. Email & Phishing Alerts ---
+  // --- 4. Email & Phishing Alerts (Total: 3) ---
   {
     id: 'malicious-attachment',
     name: 'Malicious Attachment Detected',
@@ -240,8 +357,55 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Email Security Gateway (ESG)', 'EDR', 'SIEM'],
     escalation: 'Escalate if execution is confirmed or if the attachment bypassed multiple security layers.',
   },
+  {
+    id: 'phishing-email-detected',
+    name: 'Phishing Email Detected',
+    category: 'Email & Phishing',
+    description: 'An email reported by a user or flagged by the system containing suspicious links, requests for credentials, or social engineering tactics.',
+    causes: [
+      'Targeted spear phishing campaign.',
+      'Mass phishing attempt.',
+      'User error in reporting (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Analyze Headers.** Review email headers to verify the true sender and origin IP.',
+      'Step 2: **Containment (Email).** Immediately remove the email from all user inboxes using the ESG.',
+      'Step 3: **Analyze Links/Attachments.** Sandbox any links or attachments to determine malicious intent and extract IOCs.',
+      'Step 4: **Check for User Interaction.** Determine if the recipient clicked the link, opened the attachment, or replied with sensitive information.',
+      'Step 5: **Remediation.** If credentials were entered, force an immediate password reset and check for signs of account compromise (Impossible Travel, mailbox rules).',
+      'Step 6: **Block Indicators.** Block the sender domain, sender IP, and any malicious URLs at the perimeter.',
+    ],
+    queries: [
+      { tool: 'ESG', query: 'subject="[PHISHING_SUBJECT]" OR sender_ip="[PHISHING_IP]"' },
+    ],
+    tools: ['Email Security Gateway (ESG)', 'Sandbox Analysis', 'Identity Provider'],
+    escalation: 'Escalate if the email is part of a targeted campaign or if a high-privilege user interacted with it.',
+  },
+  {
+    id: 'compromised-mailbox-detected',
+    name: 'Compromised Mailbox Detected',
+    category: 'Email & Phishing',
+    description: 'Detection of suspicious activity within a user\'s mailbox, such as mass email sending, creation of forwarding rules, or unusual access patterns.',
+    causes: [
+      'Stolen credentials used by an attacker.',
+      'Session token theft.',
+      'Internal user abusing access.',
+    ],
+    actions: [
+      'Step 1: **Immediate Suspension.** Immediately suspend the user account and invalidate all active sessions.',
+      'Step 2: **Identify Malicious Rules.** Check the mailbox for unauthorized forwarding rules, delegation changes, or retention policy modifications and remove them.',
+      'Step 3: **Audit Sent Items.** Review the Sent Items folder for unauthorized emails, especially those sent internally or containing sensitive data.',
+      'Step 4: **Identify Source.** Determine the source IP and client used for the malicious access.',
+      'Step 5: **Remediation.** Force a password reset, ensure MFA is enabled, and notify all recipients of the malicious emails.',
+    ],
+    queries: [
+      { tool: 'Mail Audit Logs', query: 'operation="New-InboxRule" AND rule_name NOT IN (approved_rules)' },
+    ],
+    tools: ['Mail Server Audit Logs', 'Identity Provider', 'SIEM'],
+    escalation: 'Escalate if the mailbox belongs to an executive or if the account was used to launch a widespread internal phishing campaign.',
+  },
 
-  // --- 5. Cloud Security Alerts ---
+  // --- 5. Cloud Security Alerts (Total: 3) ---
   {
     id: 'unusual-cloud-api-calls',
     name: 'Unusual Cloud API Calls',
@@ -290,8 +454,30 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Cloud Provider Console (IAM/Storage)', 'CSPM Tool', 'Cloud Access Logs'],
     escalation: 'Escalate immediately if PII, financial data, or critical intellectual property was exposed.',
   },
+  {
+    id: 'new-root-user-login',
+    name: 'New Root User Login',
+    category: 'Cloud Security',
+    description: 'A successful login by the cloud provider\'s root account, which should rarely, if ever, be used.',
+    causes: [
+      'Unauthorized access to the most privileged account.',
+      'Legitimate, but unapproved, maintenance activity.',
+    ],
+    actions: [
+      'Step 1: **Immediate Suspension.** Immediately invalidate the root user session and rotate the root user password and access keys.',
+      'Step 2: **Identify Source.** Determine the source IP and user agent of the login.',
+      'Step 3: **Verify Legitimacy.** Contact the designated owner of the root account out-of-band to verify the activity.',
+      'Step 4: **Audit Activity.** Review all API calls made by the root user during the session for unauthorized changes (e.g., creating new IAM users, modifying billing).',
+      'Step 5: **Remediation.** Ensure the root account is protected by strong MFA (preferably hardware) and stored securely. Document the policy violation.',
+    ],
+    queries: [
+      { tool: 'CloudTrail/Activity Log', query: 'userIdentity.type="Root" AND eventName="ConsoleLogin" AND responseElements.ConsoleLogin="Success"' },
+    ],
+    tools: ['Cloud Provider Console (IAM)', 'Cloud Audit Logs'],
+    escalation: 'CRITICAL. Escalate immediately. Root account compromise is the highest risk cloud incident.',
+  },
 
-  // --- 6. Data & Insider Threat Alerts ---
+  // --- 6. Data & Insider Threat Alerts (Total: 2) ---
   {
     id: 'unauthorized-usb',
     name: 'Unauthorized USB Device Connected',
@@ -316,8 +502,31 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'DLP System', 'Asset Inventory'],
     escalation: 'Escalate if the user refuses to cooperate or if sensitive data transfer is confirmed.',
   },
+  {
+    id: 'privileged-user-data-access',
+    name: 'Privileged User Data Access',
+    category: 'Data & Insider Threat',
+    description: 'A highly privileged user (e.g., system administrator) accessed a sensitive data repository (e.g., HR files, financial records) outside of their normal operational duties.',
+    causes: [
+      'Insider threat abusing legitimate access.',
+      'Compromised privileged account.',
+      'Legitimate, but undocumented, troubleshooting (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify User and Resource.** Determine the user, the time of access, and the specific sensitive resource accessed.',
+      'Step 2: **Verify Legitimacy.** Contact the user\'s manager or the data owner out-of-band to verify if the access was authorized or necessary.',
+      'Step 3: **Audit Access.** Review the full audit trail of the user\'s activity during the session, looking for data modification, deletion, or copying.',
+      'Step 4: **Containment (If Malicious).** If unauthorized, immediately suspend the user\'s privileged access and investigate the account for compromise.',
+      'Step 5: **Policy Enforcement.** If unauthorized but not malicious (e.g., curiosity), document the incident and initiate disciplinary action.',
+    ],
+    queries: [
+      { tool: 'File/Share Audit Logs', query: 'user_group="Privileged_Admins" AND resource_path CONTAINS "Sensitive_Data"' },
+    ],
+    tools: ['File Audit Logs', 'DLP System', 'Identity Provider'],
+    escalation: 'Escalate immediately if the user is confirmed to be acting maliciously or if the account is compromised.',
+  },
 
-  // --- 7. Threat Intelligence & External Alerts ---
+  // --- 7. Threat Intelligence & External Alerts (Total: 2) ---
   {
     id: 'c2-communication',
     name: 'Communication with C2 Server',
@@ -342,7 +551,7 @@ export const mockAlerts: AlertPlaybook[] = [
     escalation: 'High priority. Escalate immediately, as this confirms an active, post-exploitation phase.',
   },
 
-  // --- 8. SIEM & System Alerts ---
+  // --- 8. SIEM & System Alerts (Total: 2) ---
   {
     id: 'detection-rule-modified',
     name: 'Detection Rule Modified or Disabled',
@@ -367,7 +576,7 @@ export const mockAlerts: AlertPlaybook[] = [
     escalation: 'Escalate if the change was unauthorized and performed by a compromised account.',
   },
 
-  // --- 9. Incident Response / Automation Triggers ---
+  // --- 9. Incident Response / Automation Triggers (Total: 1) ---
   {
     id: 'automated-containment-triggered',
     name: 'Automated Containment Triggered',
