@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, BookOpen, Search, User } from 'lucide-react';
+import { Shield, BookOpen, Search } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { Input } from './ui/input';
 import { MadeWithDyad } from './made-with-dyad';
@@ -50,13 +50,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onSearchChange, searchTerm })
 
           {/* Actions */}
           <nav className="flex items-center space-x-1">
-            {/* Updated Playbooks Link: Now an icon button, visible on all screens */}
+            {/* Playbooks Link */}
             <Link to="/" className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors">
                 <BookOpen className="h-4 w-4" />
             </Link>
-            <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:flex">
-                <User className="h-4 w-4" />
-            </Button>
             <ThemeToggle />
           </nav>
         </div>
