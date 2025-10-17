@@ -4,7 +4,7 @@ import { AlertPlaybook, AlertCategory } from '@/types/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Filter, ChevronRight, Zap, Terminal, Wrench, User, BookOpen } from 'lucide-react';
+import { Filter, ChevronRight, Zap, Terminal, Wrench, User, BookOpen, ShieldAlert, Cloud, Database, Mail, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import MobileFilter from './MobileFilter';
@@ -20,16 +20,16 @@ const getSeverity = (alert: AlertPlaybook): { label: SeverityLevel; variant: str
   const name = alert.name.toLowerCase();
   const description = alert.description.toLowerCase();
 
-  if (name.includes('critical') || name.includes('ransomware') || name.includes('golden ticket') || description.includes('critical') || description.includes('immediate suspension') || description.includes('critical')) {
-    return { label: 'CRITICAL', variant: 'destructive', color: 'bg-red-600 hover:bg-red-700' };
+  if (name.includes('critical') || name.includes('ransomware') || name.includes('golden ticket') || description.includes('critical') || description.includes('immediate suspension') || description.includes('critical') || name.includes('zero-day') || name.includes('mbr')) {
+    return { label: 'CRITICAL', variant: 'destructive', color: 'border-red-600 bg-red-900/10' };
   }
-  if (name.includes('compromise') || name.includes('lateral movement') || name.includes('web shell') || description.includes('compromise') || description.includes('high priority')) {
-    return { label: 'HIGH', variant: 'default', color: 'bg-orange-500 hover:bg-orange-600' };
+  if (name.includes('compromise') || name.includes('lateral movement') || name.includes('web shell') || description.includes('compromise') || description.includes('high priority') || name.includes('dumping') || name.includes('api key exposed')) {
+    return { label: 'HIGH', variant: 'default', color: 'border-orange-500 bg-orange-900/10' };
   }
-  if (name.includes('unusual') || name.includes('failed') || description.includes('unusual') || description.includes('medium')) {
-    return { label: 'MEDIUM', variant: 'secondary', color: 'bg-yellow-500 hover:bg-yellow-600' };
+  if (name.includes('unusual') || name.includes('failed') || description.includes('unusual') || description.includes('medium') || name.includes('scan') || name.includes('vpn')) {
+    return { label: 'MEDIUM', variant: 'secondary', color: 'border-yellow-500 bg-yellow-900/10' };
   }
-  return { label: 'LOW', variant: 'outline', color: 'bg-green-500 hover:bg-green-600' };
+  return { label: 'LOW', variant: 'outline', color: 'border-green-500 bg-green-900/10' };
 };
 
 // Helper function to map tools to icons (for visual flair)
@@ -38,7 +38,11 @@ const toolIconMap: { [key: string]: React.ElementType } = {
   'EDR': Terminal,
   'Firewall': Wrench,
   'Identity Provider': User,
-  'Mail Server': BookOpen,
+  'Mail Server': Mail,
+  'Cloud Provider Console': Cloud,
+  'Database Audit Logs': Database,
+  'Threat Intelligence Platform': Globe,
+  'SOAR Platform': ShieldAlert,
 };
 
 const severityOptions: { label: SeverityLevel, color: string }[] = [
@@ -174,13 +178,18 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
               const severity = getSeverity(alert);
               return (
                 <Link key={alert.id} to={`/alert/${alert.id}`}>
-                  <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-primary hover:border-l-4 hover:border-l-primary/80">
+                  <Card 
+                    className={cn(
+                      "transition-all duration-300 cursor-pointer border-l-4 hover:shadow-xl hover:scale-[1.01] hover:border-l-8",
+                      severity.color
+                    )}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-xl font-semibold text-foreground">
                           {alert.name}
                         </CardTitle>
-                        <Badge className={cn("text-xs font-medium uppercase", severity.color)}>
+                        <Badge className={cn("text-xs font-medium uppercase", severity.color.split(' ')[0].replace('border-', 'bg-').replace('hover:', ''))}>
                           {severity.label}
                         </Badge>
                       </div>
@@ -196,11 +205,12 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
                         <div className="flex space-x-2 text-muted-foreground text-sm">
                           <span className="font-medium hidden sm:inline">Tools:</span>
                           {alert.tools.slice(0, 3).map((tool, index) => {
-                            const Icon = toolIconMap[tool.split('/')[0]] || Zap;
+                            const toolName = tool.split('/')[0];
+                            const Icon = toolIconMap[toolName] || Zap;
                             return (
-                              <Badge key={index} variant="outline" className="flex items-center space-x-1">
+                              <Badge key={index} variant="outline" className="flex items-center space-x-1 transition-colors duration-200 hover:bg-accent">
                                 <Icon className="w-3 h-3" />
-                                <span className="hidden sm:inline">{tool.split('/')[0]}</span>
+                                <span className="hidden sm:inline">{toolName}</span>
                               </Badge>
                             );
                           })}
@@ -210,7 +220,7 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
                             </span>
                           )}
                         </div>
-                        <Button variant="link" className="p-0 h-auto text-primary">
+                        <Button variant="link" className="p-0 h-auto text-primary group-hover:translate-x-1 transition-transform duration-200">
                           View Playbook <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>

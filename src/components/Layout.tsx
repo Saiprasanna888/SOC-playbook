@@ -15,11 +15,11 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, onSearchChange, searchTerm }) => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-40 w-full border-b bg-background/90 backdrop-blur-sm border-border shadow-sm">
+      <header className="sticky top-0 z-40 w-full border-b border-border shadow-lg bg-background/90 backdrop-blur-md transition-all duration-300">
         <div className="container flex h-16 items-center justify-between space-x-4 sm:space-x-0">
           {/* Logo and Title */}
-          <Link to="/" className="flex items-center space-x-2">
-            <Shield className="h-6 w-6 text-primary" />
+          <Link to="/" className="flex items-center space-x-2 group">
+            <Shield className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-6" />
             <span className="font-extrabold text-xl tracking-tight text-foreground hidden sm:inline">
               <span className="text-primary">SOCpedia</span> by Saiprasanna
             </span>
@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onSearchChange, searchTerm })
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search alerts, tools, or keywords..."
-              className="pl-9 h-9 w-full bg-muted/50 border-border focus-visible:ring-primary"
+              className="pl-9 h-9 w-full bg-muted/50 border-border focus-visible:ring-primary transition-all duration-300 hover:bg-muted"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
             />
