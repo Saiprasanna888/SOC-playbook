@@ -1,18 +1,24 @@
-// Update this page (the content is just a fallback if you fail to update the page)
-
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import Layout from "@/components/Layout";
+import AlertList from "@/components/AlertList";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">
-          Start building your amazing project here!
-        </p>
+    <Layout>
+      <div className="space-y-8">
+        <header className="text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+            SOC Analyst Alert Dictionary
+          </h1>
+          <p className="text-lg text-muted-foreground mt-2">
+            Quickly find playbooks and response steps for common security alerts.
+          </p>
+        </header>
+        
+        <AlertList />
       </div>
       <MadeWithDyad />
-    </div>
+    </Layout>
   );
 };
 
