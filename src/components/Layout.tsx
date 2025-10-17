@@ -50,9 +50,9 @@ const Layout: React.FC<LayoutProps> = ({ children, onSearchChange, searchTerm })
 
           {/* Actions */}
           <nav className="flex items-center space-x-1">
-            <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center space-x-1 p-2 rounded-md hover:bg-accent hidden sm:flex">
+            {/* Updated Playbooks Link: Now an icon button, visible on all screens */}
+            <Link to="/" className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors">
                 <BookOpen className="h-4 w-4" />
-                <span>Playbooks</span>
             </Link>
             <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:flex">
                 <HelpCircle className="h-4 w-4" />
