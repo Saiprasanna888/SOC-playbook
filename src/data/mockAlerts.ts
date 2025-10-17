@@ -1,7 +1,7 @@
 import { AlertPlaybook, AlertCategory } from "@/types/alert";
 
 export const mockAlerts: AlertPlaybook[] = [
-  // --- 1. Authentication & Access Alerts (Total: 5) ---
+  // --- 1. Authentication & Access Alerts (Total: 10) ---
   {
     id: 'brute-force',
     name: 'Brute Force Attack Detected',
@@ -116,8 +116,119 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Identity Provider Logs', 'Communication Tools', 'GeoIP Database'],
     escalation: 'Escalate if the user cannot be reached or if post-login malicious activity is detected.',
   },
+  {
+    id: 'account-lockout-storm',
+    name: 'Account Lockout Storm',
+    category: 'Authentication & Access',
+    description: 'A large number of user accounts are being locked out simultaneously or in rapid succession, often indicating a password spray attack or misconfigured service.',
+    causes: [
+      'Password spray attack targeting many users with common passwords.',
+      'Misconfigured service account attempting to authenticate with an expired password.',
+      'Internal network issue causing authentication failures.',
+    ],
+    actions: [
+      'Step 1: **Identify Source.** Determine the source IP address(es) causing the lockouts.',
+      'Step 2: **Containment (Source).** Block the source IP at the firewall/NAC if external and malicious.',
+      'Step 3: **Check Service Accounts.** If the source is internal, check if a service account is involved and temporarily disable it if necessary.',
+      'Step 4: **Analyze Password Attempts.** Review logs for the password being used in the failed attempts to confirm a spray attack.',
+      'Step 5: **Remediation.** If a spray attack is confirmed, force password resets for all targeted accounts and review password policies.',
+    ],
+    queries: [
+      { tool: 'AD/IAM Logs', query: 'EventID=4740 | stats count by src_ip, user | where count > 100' },
+    ],
+    tools: ['Active Directory/IAM Console', 'SIEM', 'Firewall/NAC'],
+    escalation: 'Escalate if the lockout storm impacts critical business functions or if the source cannot be contained.',
+  },
+  {
+    id: 'credential-dumping-attempt',
+    name: 'Credential Dumping Attempt',
+    category: 'Authentication & Access',
+    description: 'Detection of tools or processes (e.g., Mimikatz, LSASS access) attempting to extract credentials from memory or local storage on an endpoint.',
+    causes: [
+      'Post-exploitation activity by an attacker who has gained initial access.',
+      'Malware attempting to harvest credentials for lateral movement.',
+    ],
+    actions: [
+      'Step 1: **Immediate Isolation.** Immediately isolate the affected host from the network.',
+      'Step 2: **Identify Process.** Determine the process name and command line arguments used for the dumping attempt.',
+      'Step 3: **Capture Memory.** Capture a memory dump of the host for forensic analysis.',
+      'Step 4: **Check for Lateral Movement.** Search logs for the compromised user account attempting to log into other systems immediately after the dump attempt.',
+      'Step 5: **Remediation.** Force a password reset for the logged-in user and re-image the host.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'process_name="lsass.exe" AND access_type="Read_Memory" AND caller_process NOT IN (approved_list)' },
+    ],
+    tools: ['EDR Console', 'Memory Forensic Tools', 'SIEM'],
+    escalation: 'High priority. Escalate if the attempt was successful and lateral movement is detected.',
+  },
+  {
+    id: 'suspicious-login-tor',
+    name: 'Suspicious Login from Tor/VPN Exit Node',
+    category: 'Authentication & Access',
+    description: 'A successful login originating from a known high-risk IP address associated with Tor, public VPN exit nodes, or known malicious proxies.',
+    causes: [
+      'Attacker masking their true location using anonymity services.',
+      'User legitimately using a VPN (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Verify Source.** Confirm the source IP is listed on a high-risk threat intelligence feed.',
+      'Step 2: **Immediate Suspension.** Immediately suspend the user account and invalidate the session.',
+      'Step 3: **Contact User.** Contact the user out-of-band to verify if they initiated the login.',
+      'Step 4: **Audit Activity.** Review all activity performed during the suspicious session (e.g., data access, configuration changes).',
+      'Step 5: **Remediation.** If malicious, force a password reset and ensure MFA is enforced. Block the source IP at the perimeter.',
+    ],
+    queries: [
+      { tool: 'Identity Logs', query: 'LoginEvents | where geo_ip IN (Tor_Exit_Nodes)' },
+    ],
+    tools: ['Identity Provider Logs', 'Threat Intelligence Feeds', 'Communication Tools'],
+    escalation: 'Escalate if the user is high-privilege or if unauthorized activity occurred.',
+  },
+  {
+    id: 'privilege-escalation',
+    name: 'Privilege Escalation Detected',
+    category: 'Authentication & Access',
+    description: 'A standard user account successfully gained administrative or system-level privileges on an endpoint or server.',
+    causes: [
+      'Exploitation of a local vulnerability (e.g., kernel bug, misconfigured service).',
+      'Misconfigured system permissions allowing unauthorized privilege changes.',
+    ],
+    actions: [
+      'Step 1: **Identify Host and User.** Determine the host and the user account that escalated privileges.',
+      'Step 2: **Immediate Isolation.** Isolate the affected host from the network.',
+      'Step 3: **Analyze Method.** Determine the exact method or tool used for the escalation (e.g., specific exploit, system utility).',
+      'Step 4: **Check for Follow-up.** Review logs for immediate post-escalation activity (e.g., lateral movement, credential dumping).',
+      'Step 5: **Remediation.** Revert the privilege change, patch the vulnerability, and re-image the host.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'event_type="Privilege_Change" AND new_privilege="System" AND old_privilege="User"' },
+    ],
+    tools: ['EDR Console', 'Vulnerability Scanner', 'Patch Management'],
+    escalation: 'High priority. Escalate if the host is critical or if the escalation was successful.',
+  },
+  {
+    id: 'new-user-high-privilege-group',
+    name: 'New User Added to High-Privilege Group',
+    category: 'Authentication & Access',
+    description: 'A user account was added to a sensitive group (e.g., Domain Admins, Global Administrators) without proper change control.',
+    causes: [
+      'Compromised administrator account making unauthorized changes.',
+      'Misconfigured automation or provisioning system.',
+    ],
+    actions: [
+      'Step 1: **Identify Changer and Target.** Determine the user who made the change and the user who was added to the group.',
+      'Step 2: **Verify Change Control.** Check the change management system for an approved ticket.',
+      'Step 3: **Containment.** If unauthorized, immediately remove the user from the high-privilege group.',
+      'Step 4: **Investigate Changer.** If the changer account was compromised, suspend it and follow the Compromised Account playbook.',
+      'Step 5: **Audit Activity.** Review all activity of the newly privileged user since the change occurred.',
+    ],
+    queries: [
+      { tool: 'AD/IAM Logs', query: 'EventID=4728 AND TargetGroupName="Domain Admins"' },
+    ],
+    tools: ['Active Directory/IAM Console', 'Change Management System', 'SIEM'],
+    escalation: 'High priority. Escalate immediately if the change was unauthorized.',
+  },
 
-  // --- 2. Network & Firewall Alerts (Total: 4) ---
+  // --- 2. Network & Firewall Alerts (Total: 8) ---
   {
     id: 'dns-tunneling',
     name: 'DNS Tunneling Detected',
@@ -212,8 +323,98 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Threat Intelligence Platform', 'Firewall/Proxy', 'EDR'],
     escalation: 'High priority. Escalate if the connection resulted in a successful data transfer or payload download.',
   },
+  {
+    id: 'large-outbound-icmp',
+    name: 'Large Volume of Outbound ICMP Traffic',
+    category: 'Network & Firewall',
+    description: 'Detection of unusually high ICMP (ping) traffic volume originating from an internal host, potentially indicating network mapping or data exfiltration (ICMP tunneling).',
+    causes: [
+      'Attacker performing network reconnaissance.',
+      'ICMP tunneling malware attempting to exfiltrate data.',
+      'Misconfigured network monitoring tool (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Destination.** Determine the source host and the destination IP(s) receiving the ICMP traffic.',
+      'Step 2: **Containment.** Immediately isolate the source host from the network.',
+      'Step 3: **Analyze Payload.** If possible, inspect the ICMP packets for non-standard data payloads (indicative of tunneling).',
+      'Step 4: **Forensic Analysis.** Analyze the isolated host for ICMP tunneling tools or malware.',
+      'Step 5: **Remediation.** Block outbound ICMP traffic to external networks unless explicitly required.',
+    ],
+    queries: [
+      { tool: 'NetFlow/Firewall', query: 'protocol="ICMP" AND traffic_outbound > 10000 | top src_ip' },
+    ],
+    tools: ['NetFlow Analyzer', 'Firewall/IPS', 'EDR'],
+    escalation: 'Escalate if ICMP tunneling is confirmed or if the source is a critical server.',
+  },
+  {
+    id: 'internal-host-scanning',
+    name: 'Internal Host Scanning Internal Network',
+    category: 'Network & Firewall',
+    description: 'An internal host is performing rapid port scanning against other internal hosts, indicating potential compromise and lateral movement reconnaissance.',
+    causes: [
+      'Compromised host running a network scanner (e.g., Nmap).',
+      'Worm or self-propagating malware.',
+      'Legitimate vulnerability scanner running outside of schedule (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Scanner and Targets.** Determine the source IP and the range of internal IPs being scanned.',
+      'Step 2: **Immediate Isolation.** Isolate the source host from the network.',
+      'Step 3: **Verify Legitimacy.** Check the asset inventory to confirm if the host is an approved scanner.',
+      'Step 4: **Forensic Analysis.** Analyze the isolated host for unauthorized scanning tools or malware.',
+      'Step 5: **Check for Exploitation.** Review logs on the target hosts for any immediate connection attempts or exploitation attempts following the scan.',
+    ],
+    queries: [
+      { tool: 'IPS/Firewall Logs', query: 'event_type="Internal_Port_Scan" | group by src_ip' },
+    ],
+    tools: ['IPS/Firewall Console', 'EDR', 'Asset Inventory'],
+    escalation: 'Escalate if the scanning host is a user endpoint or if exploitation attempts follow the scan.',
+  },
+  {
+    id: 'unauthorized-external-rdp',
+    name: 'Unauthorized External RDP/SSH Connection',
+    category: 'Network & Firewall',
+    description: 'A successful inbound RDP (3389) or SSH (22) connection from an external IP address that is not on the approved access list.',
+    causes: [
+      'Attacker exploiting a weak password or vulnerability on an exposed service.',
+      'Misconfigured firewall rule allowing external access.',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Target.** Determine the external source IP and the internal server/host accessed.',
+      'Step 2: **Immediate Block.** Block the source IP at the perimeter firewall.',
+      'Step 3: **Terminate Session.** Immediately terminate the RDP/SSH session on the target host.',
+      'Step 4: **Audit Activity.** Review the session logs on the target host for commands executed or files accessed.',
+      'Step 5: **Remediation.** Disable external RDP/SSH access unless absolutely necessary and enforce strong MFA for all remote access.',
+    ],
+    queries: [
+      { tool: 'Firewall Logs', query: 'dest_port IN (22, 3389) AND src_ip NOT IN (approved_external_ips)' },
+    ],
+    tools: ['Firewall Console', 'Server Logs', 'Identity Provider'],
+    escalation: 'CRITICAL. Escalate immediately, especially if the target is a domain controller or critical server.',
+  },
+  {
+    id: 'high-bandwidth-uncategorized',
+    name: 'High Bandwidth Usage to Uncategorized Domain',
+    category: 'Network & Firewall',
+    description: 'A host is sending or receiving a large volume of data to a domain that is not classified by the web proxy or DNS filter, often used by new C2 infrastructure.',
+    causes: [
+      'Malware communicating with a newly registered C2 server.',
+      'User accessing a legitimate, but new, cloud service (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Domain.** Determine the source host and the uncategorized domain/IP.',
+      'Step 2: **Containment.** Temporarily block the domain/IP at the proxy/firewall.',
+      'Step 3: **Analyze Domain.** Use external tools (e.g., VirusTotal, WHOIS) to analyze the domain reputation and registration date.',
+      'Step 4: **Forensic Analysis.** Analyze the source host to determine the process initiating the connection.',
+      'Step 5: **Remediation.** If malicious, follow the Malware Eradication playbook and add the domain to the threat intelligence feed.',
+    ],
+    queries: [
+      { tool: 'Proxy Logs', query: 'category="Uncategorized" AND bytes_sent > 100MB | top src_ip' },
+    ],
+    tools: ['Web Proxy Logs', 'Threat Intelligence Tools', 'EDR'],
+    escalation: 'Escalate if the domain is confirmed malicious or if data exfiltration is suspected.',
+  },
 
-  // --- 3. Endpoint & Malware Alerts (Total: 5) ---
+  // --- 3. Endpoint & Malware Alerts (Total: 10) ---
   {
     id: 'ransomware-behavior',
     name: 'Ransomware Behavior Detected',
@@ -331,8 +532,122 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'PowerShell Transcription Logs', 'Sandbox Analysis'],
     escalation: 'Escalate if the command was used for credential theft or lateral movement.',
   },
+  {
+    id: 'suspicious-child-office',
+    name: 'Suspicious Child Process of Office Application',
+    category: 'Endpoint & Malware',
+    description: 'A Microsoft Office application (Word, Excel) spawned an unusual child process like PowerShell, cmd.exe, or a browser, often indicating a macro-based attack.',
+    causes: [
+      'Malicious macro execution in a document.',
+      'Exploitation of an Office vulnerability.',
+    ],
+    actions: [
+      'Step 1: **Identify Host and User.** Determine the host and user who opened the document.',
+      'Step 2: **Immediate Isolation.** Isolate the affected host.',
+      'Step 3: **Analyze Document.** Retrieve the original document (if possible) and analyze the macro code or embedded objects.',
+      'Step 4: **Process Termination.** Terminate the suspicious child process and the parent Office application.',
+      'Step 5: **IOC Search.** Search the environment for the document hash and any downloaded files.',
+      'Step 6: **Remediation.** Delete the malicious document and re-image the host.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'parent_process IN ("winword.exe", "excel.exe") AND child_process IN ("powershell.exe", "cmd.exe")' },
+    ],
+    tools: ['EDR Console', 'Email Security Gateway', 'Sandbox Analysis'],
+    escalation: 'Escalate if the child process successfully downloaded and executed a payload.',
+  },
+  {
+    id: 'wmi-persistence',
+    name: 'WMI Persistence Mechanism',
+    category: 'Endpoint & Malware',
+    description: 'Detection of a new WMI Event Filter or Consumer being created, a common technique for fileless persistence and execution.',
+    causes: [
+      'Attacker establishing a hidden persistence mechanism.',
+      'Advanced fileless malware.',
+    ],
+    actions: [
+      'Step 1: **Identify Host and Mechanism.** Determine the host and the specific WMI filter/consumer created.',
+      'Step 2: **Immediate Isolation.** Isolate the affected host.',
+      'Step 3: **Remove Persistence.** Use WMI tools to immediately delete the unauthorized filter and consumer.',
+      'Step 4: **Analyze Payload.** Determine the command or script that the WMI mechanism was set to execute.',
+      'Step 5: **Root Cause Analysis.** Investigate the process that created the WMI object.',
+      'Step 6: **Remediation.** Re-image the host to ensure complete removal of the threat.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'event_type="WMI_Modification" AND operation="Create" AND user NOT IN (approved_admins)' },
+    ],
+    tools: ['EDR Console', 'WMI Management Tools', 'SIEM'],
+    escalation: 'High priority. WMI persistence is a strong indicator of a skilled attacker.',
+  },
+  {
+    id: 'antivirus-service-stopped',
+    name: 'Antivirus/EDR Service Stopped',
+    category: 'Endpoint & Malware',
+    description: 'A critical security service (Antivirus, EDR agent) was stopped, disabled, or tampered with on an endpoint.',
+    causes: [
+      'Attacker attempting to disable security controls before executing malware.',
+      'Malware payload specifically targeting security software.',
+      'System instability (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Host and User.** Determine the host and the user/process that stopped the service.',
+      'Step 2: **Immediate Isolation.** Isolate the affected host.',
+      'Step 3: **Restart Service.** Attempt to remotely restart the security service. If it fails, proceed with caution.',
+      'Step 4: **Forensic Analysis.** Analyze the host for tools used to tamper with the service (e.g., `sc.exe`, registry changes).',
+      'Step 5: **IOC Search.** Search the environment for any malware executed during the window the service was down.',
+      'Step 6: **Remediation.** Re-image the host if tampering is confirmed.',
+    ],
+    queries: [
+      { tool: 'EDR/SIEM', query: 'event_type="Service_Stop" AND service_name IN ("EDR_Agent", "AV_Service")' },
+    ],
+    tools: ['EDR Console', 'SIEM', 'Service Management Console'],
+    escalation: 'CRITICAL. Escalate immediately, as the host is currently unprotected.',
+  },
+  {
+    id: 'new-executable-temp-dir',
+    name: 'New Executable in Temp Directory',
+    category: 'Endpoint & Malware',
+    description: 'A new executable file (.exe, .dll) was created and executed from a temporary or user profile directory (e.g., AppData, Temp).',
+    causes: [
+      'Malware dropping a payload after initial infection.',
+      'Browser download or legitimate installer (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Host and File.** Determine the host, file path, and file hash.',
+      'Step 2: **Immediate Isolation.** Isolate the affected host.',
+      'Step 3: **Analyze File.** Submit the file hash to a sandbox or threat intelligence platform for analysis.',
+      'Step 4: **Check Parent Process.** Determine the parent process that created and executed the file (e.g., a browser, an email client).',
+      'Step 5: **Remediation.** Delete the malicious file and re-image the host if confirmed malicious.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'event_type="File_Creation" AND file_path CONTAINS ("AppData", "Temp") AND file_extension IN (".exe", ".dll")' },
+    ],
+    tools: ['EDR Console', 'Sandbox Analysis', 'Threat Intelligence'],
+    escalation: 'Escalate if the file is confirmed malicious and executed successfully.',
+  },
+  {
+    id: 'lateral-movement-attempt',
+    name: 'Lateral Movement Attempt (PsExec/WMI)',
+    category: 'Endpoint & Malware',
+    description: 'Detection of tools like PsExec, WMI, or RDP being used to execute commands or establish sessions on a remote internal host from a non-administrative source.',
+    causes: [
+      'Attacker using stolen credentials to move across the network.',
+      'Compromised user account attempting to access unauthorized resources.',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Target.** Determine the source host initiating the connection and the target host.',
+      'Step 2: **Immediate Isolation.** Isolate both the source and target hosts.',
+      'Step 3: **Analyze Credentials.** Determine which user credentials were used for the lateral movement attempt.',
+      'Step 4: **Remediation.** Force a password reset for the compromised user account and perform forensic analysis on both hosts.',
+      'Step 5: **Mitigation.** Restrict the use of administrative tools like PsExec to approved administrative jump boxes.',
+    ],
+    queries: [
+      { tool: 'EDR/SIEM', query: 'process_name="psexec.exe" OR process_name="wmic.exe" AND remote_connection="True"' },
+    ],
+    tools: ['EDR Console', 'SIEM', 'Identity Provider'],
+    escalation: 'CRITICAL. Escalate immediately, as this indicates network compromise.',
+  },
 
-  // --- 4. Email & Phishing Alerts (Total: 3) ---
+  // --- 4. Email & Phishing Alerts (Total: 6) ---
   {
     id: 'malicious-attachment',
     name: 'Malicious Attachment Detected',
@@ -404,8 +719,74 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Mail Server Audit Logs', 'Identity Provider', 'SIEM'],
     escalation: 'Escalate if the mailbox belongs to an executive or if the account was used to launch a widespread internal phishing campaign.',
   },
+  {
+    id: 'ceo-fraud-bec',
+    name: 'CEO Fraud / Business Email Compromise (BEC)',
+    category: 'Email & Phishing',
+    description: 'An email impersonating an executive (CEO, CFO) requesting an urgent wire transfer, gift card purchase, or sensitive data transfer.',
+    causes: [
+      'Social engineering attack targeting finance or HR personnel.',
+      'Compromised external vendor email account.',
+    ],
+    actions: [
+      'Step 1: **Verify Transaction.** Immediately contact the finance/target team via phone or internal chat to halt any requested transaction.',
+      'Step 2: **Containment (Email).** Remove the email from all user inboxes using the ESG.',
+      'Step 3: **Analyze Headers.** Review headers to confirm the spoofing technique (e.g., display name spoofing, lookalike domain).',
+      'Step 4: **User Interview.** Interview the recipient to understand their interaction and if any funds were transferred.',
+      'Step 5: **Remediation.** If funds were transferred, immediately contact the bank for recall procedures. Block the sender domain/IP.',
+    ],
+    queries: [
+      { tool: 'ESG', query: 'sender_name IN ("CEO Name", "CFO Name") AND keywords IN ("wire transfer", "urgent payment")' },
+    ],
+    tools: ['Email Security Gateway (ESG)', 'Finance Team', 'Communication Tools'],
+    escalation: 'CRITICAL. Escalate immediately to management and legal if financial loss is involved.',
+  },
+  {
+    id: 'mass-email-deletion',
+    name: 'Mass Email Deletion by User',
+    category: 'Email & Phishing',
+    description: 'A user account is deleting a large volume of emails from their inbox or sent items in a short period, often indicating a compromise or cover-up attempt.',
+    causes: [
+      'Attacker attempting to hide malicious activity (e.g., C2 communication, phishing emails).',
+      'User attempting to destroy evidence (Insider Threat).',
+    ],
+    actions: [
+      'Step 1: **Immediate Suspension.** Immediately suspend the user account and invalidate all active sessions.',
+      'Step 2: **Restore Emails.** Use mail server tools to restore the deleted emails from backup or retention archives.',
+      'Step 3: **Audit Activity.** Review the restored emails and the user\'s login history for signs of compromise (Impossible Travel, new IPs).',
+      'Step 4: **Forensic Analysis.** If insider threat is suspected, preserve the endpoint and mailbox for forensic review.',
+      'Step 5: **Remediation.** Force a password reset and ensure MFA is enabled.',
+    ],
+    queries: [
+      { tool: 'Mail Audit Logs', query: 'operation="HardDelete" AND item_count > 50' },
+    ],
+    tools: ['Mail Server Audit Logs', 'Identity Provider', 'Forensic Toolkit'],
+    escalation: 'Escalate if the user is high-privilege or if the deleted emails contain evidence of a larger breach.',
+  },
+  {
+    id: 'suspicious-mailbox-delegation',
+    name: 'Suspicious Mailbox Delegation Change',
+    category: 'Email & Phishing',
+    description: 'A user granted delegate access or full access permissions to their mailbox to another user or external address without authorization.',
+    causes: [
+      'Compromised account granting access to an attacker.',
+      'Insider threat setting up a monitoring mechanism.',
+    ],
+    actions: [
+      'Step 1: **Identify Changer and Delegate.** Determine the user who made the change and the delegate recipient.',
+      'Step 2: **Immediate Reversal.** Immediately remove the unauthorized delegation/access rights.',
+      'Step 3: **Contact User.** Contact the mailbox owner out-of-band to verify the change.',
+      'Step 4: **Audit Delegate Activity.** Review the delegate\'s access logs for any unauthorized reading or sending of emails.',
+      'Step 5: **Remediation.** If unauthorized, force a password reset for the mailbox owner and investigate the changer account.',
+    ],
+    queries: [
+      { tool: 'Mail Audit Logs', query: 'operation IN ("Add-MailboxPermission", "Add-RecipientPermission") AND delegate_user NOT IN (approved_list)' },
+    ],
+    tools: ['Mail Server Audit Logs', 'Identity Provider'],
+    escalation: 'Escalate if the mailbox belongs to an executive or legal team member.',
+  },
 
-  // --- 5. Cloud Security Alerts (Total: 3) ---
+  // --- 5. Cloud Security Alerts (Total: 6) ---
   {
     id: 'unusual-cloud-api-calls',
     name: 'Unusual Cloud API Calls',
@@ -476,8 +857,75 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Cloud Provider Console (IAM)', 'Cloud Audit Logs'],
     escalation: 'CRITICAL. Escalate immediately. Root account compromise is the highest risk cloud incident.',
   },
+  {
+    id: 'iam-policy-modification',
+    name: 'IAM Policy Modification (Granting Broad Access)',
+    category: 'Cloud Security',
+    description: 'A change was made to an IAM policy that grants overly permissive access (e.g., `*` resource or `Allow: *` action) to a user or role.',
+    causes: [
+      'Compromised account attempting to gain broad access.',
+      'Developer error during deployment.',
+    ],
+    actions: [
+      'Step 1: **Identify Policy and Changer.** Determine the policy name, the user/role affected, and the identity that made the change.',
+      'Step 2: **Immediate Reversal.** Immediately revert the IAM policy to its previous, secure version.',
+      'Step 3: **Audit Activity.** Review the activity of the identity that made the change for signs of compromise.',
+      'Step 4: **Check for Exploitation.** Search logs for the affected user/role attempting to use the newly granted broad permissions.',
+      'Step 5: **Remediation.** Enforce policy checks (e.g., SCPs, Guardrails) to prevent future broad policy deployments.',
+    ],
+    queries: [
+      { tool: 'Cloud Audit Logs', query: 'eventName="PutRolePolicy" AND requestParameters.policyText CONTAINS "*:*" AND user NOT IN (approved_automation)' },
+    ],
+    tools: ['Cloud Provider Console (IAM)', 'Cloud Audit Logs', 'CSPM Tool'],
+    escalation: 'High priority. Escalate if the change was unauthorized and the affected identity is high-risk.',
+  },
+  {
+    id: 'unusual-resource-deletion',
+    name: 'Unusual Resource Deletion Activity',
+    category: 'Cloud Security',
+    description: 'A user or service account is deleting critical cloud resources (e.g., databases, virtual machines, backups) outside of normal maintenance windows.',
+    causes: [
+      'Attacker performing destructive actions (e.g., ransomware follow-up).',
+      'Insider threat attempting sabotage.',
+      'Misconfigured automation script (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Identity and Resource.** Determine the identity performing the deletion and the resources targeted.',
+      'Step 2: **Containment.** Immediately revoke the credentials/access key of the identity performing the deletion.',
+      'Step 3: **Verify Legitimacy.** Check change management for approved maintenance.',
+      'Step 4: **Restore Resources.** Initiate recovery procedures for deleted resources from backups.',
+      'Step 5: **Forensic Analysis.** Investigate the identity for compromise or malicious intent.',
+    ],
+    queries: [
+      { tool: 'Cloud Audit Logs', query: 'eventName IN ("DeleteDBInstance", "TerminateInstances") AND time_of_day NOT IN (maintenance_window)' },
+    ],
+    tools: ['Cloud Audit Logs', 'Cloud Console', 'Backup Management'],
+    escalation: 'CRITICAL. Escalate immediately to IR and management.',
+  },
+  {
+    id: 'cloud-metadata-access',
+    name: 'Cloud Instance Metadata Service Access',
+    category: 'Cloud Security',
+    description: 'Detection of a process or application accessing the cloud instance metadata service (IMDS) to retrieve sensitive information like temporary credentials, often indicating SSRF or container escape.',
+    causes: [
+      'Vulnerable application exploited via Server-Side Request Forgery (SSRF).',
+      'Container escape allowing access to the host metadata.',
+    ],
+    actions: [
+      'Step 1: **Identify Instance and Process.** Determine the cloud instance and the process making the IMDS request.',
+      'Step 2: **Immediate Isolation.** Isolate the affected cloud instance/container.',
+      'Step 3: **Revoke Credentials.** If temporary credentials were retrieved, immediately revoke them.',
+      'Step 4: **Analyze Application.** Review the application logs and code for SSRF vulnerabilities.',
+      'Step 5: **Mitigation.** Enforce IMDSv2 (token-based access) to prevent unauthorized access.',
+    ],
+    queries: [
+      { tool: 'Network/Host Logs', query: 'dest_ip="169.254.169.254" AND request_method="GET"' },
+    ],
+    tools: ['Cloud Console', 'Network Logs', 'Application Logs'],
+    escalation: 'High priority. Escalate if temporary credentials were successfully retrieved and used.',
+  },
 
-  // --- 6. Data & Insider Threat Alerts (Total: 2) ---
+  // --- 6. Data & Insider Threat Alerts (Total: 4) ---
   {
     id: 'unauthorized-usb',
     name: 'Unauthorized USB Device Connected',
@@ -525,6 +973,51 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['File Audit Logs', 'DLP System', 'Identity Provider'],
     escalation: 'Escalate immediately if the user is confirmed to be acting maliciously or if the account is compromised.',
   },
+  {
+    id: 'mass-file-download',
+    name: 'Mass File Download from Cloud Storage',
+    category: 'Data & Insider Threat',
+    description: 'A user downloaded an unusually large number of files or a high volume of data from a corporate cloud storage service (e.g., SharePoint, Google Drive).',
+    causes: [
+      'Insider threat preparing for departure or sabotage.',
+      'Compromised account exfiltrating data.',
+      'Legitimate synchronization or backup (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify User and Volume.** Determine the user account and the total volume/count of files downloaded.',
+      'Step 2: **Containment.** Temporarily suspend the user\'s access to the cloud storage service.',
+      'Step 3: **Verify Legitimacy.** Contact the user and their manager out-of-band to verify the activity.',
+      'Step 4: **DLP Review.** Check DLP logs to see if the downloaded files contained sensitive tags (PII, IP).',
+      'Step 5: **Remediation.** If unauthorized, perform a full forensic analysis and initiate disciplinary procedures.',
+    ],
+    queries: [
+      { tool: 'Cloud Storage Logs', query: 'operation="Download" AND file_count > 500 OR total_size > 1GB' },
+    ],
+    tools: ['Cloud Storage Audit Logs', 'DLP System', 'Communication Tools'],
+    escalation: 'Escalate if the user is high-risk or if sensitive data was downloaded.',
+  },
+  {
+    id: 'printing-sensitive-documents',
+    name: 'Printing of Sensitive Documents',
+    category: 'Data & Insider Threat',
+    description: 'A user printed a document classified as highly sensitive (e.g., financial reports, employee PII) outside of approved procedures.',
+    causes: [
+      'Insider threat attempting to exfiltrate data physically.',
+      'User error or lack of training.',
+    ],
+    actions: [
+      'Step 1: **Identify User and Document.** Determine the user, the printer used, and the classification of the document.',
+      'Step 2: **Containment.** Temporarily suspend the user\'s printing privileges.',
+      'Step 3: **Verify Legitimacy.** Contact the user and their manager to verify the need for the printout.',
+      'Step 4: **DLP Review.** Review the DLP logs for the print job details.',
+      'Step 5: **Remediation.** If unauthorized, document the incident and enforce policy/retraining. If malicious, engage physical security.',
+    ],
+    queries: [
+      { tool: 'DLP/Print Logs', query: 'action="Print" AND data_classification="Highly Sensitive"' },
+    ],
+    tools: ['DLP System', 'Print Server Logs', 'Physical Security Team'],
+    escalation: 'Escalate if the document is highly confidential or if the user is uncooperative.',
+  },
 
   // --- 7. Threat Intelligence & External Alerts (Total: 2) ---
   {
@@ -549,6 +1042,28 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['Threat Intelligence Platform', 'SIEM', 'EDR', 'Firewall'],
     escalation: 'High priority. Escalate immediately, as this confirms an active, post-exploitation phase.',
+  },
+  {
+    id: 'domain-squatting-alert',
+    name: 'Domain Squatting/Typosquatting Alert',
+    category: 'Threat Intelligence & External',
+    description: 'A newly registered domain closely resembling a corporate domain (typosquatting) was detected, often used for phishing or brand abuse.',
+    causes: [
+      'Threat actor preparing a phishing campaign against employees or customers.',
+      'Brand protection monitoring system alert.',
+    ],
+    actions: [
+      'Step 1: **Verify Domain.** Confirm the domain registration details and its similarity to the corporate brand.',
+      'Step 2: **Analyze Content.** Check if the domain is hosting malicious content (e.g., fake login page, malware).',
+      'Step 3: **Block Indicators.** Block the domain at the perimeter proxy/DNS filter to prevent internal access.',
+      'Step 4: **Legal Notification.** Notify the legal and brand protection teams for potential takedown procedures.',
+      'Step 5: **Proactive Search.** Search email logs for any inbound emails originating from the suspicious domain.',
+    ],
+    queries: [
+      { tool: 'Threat Intelligence Platform', query: 'domain_name CONTAINS "corpname" AND registration_date="[RECENT]"' },
+    ],
+    tools: ['Threat Intelligence Platform', 'Legal Team', 'Email Security Gateway'],
+    escalation: 'Escalate if the domain is actively being used for phishing or malware distribution.',
   },
 
   // --- 8. SIEM & System Alerts (Total: 2) ---
@@ -575,8 +1090,31 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['SIEM Audit Logs', 'Change Management System', 'Identity Provider'],
     escalation: 'Escalate if the change was unauthorized and performed by a compromised account.',
   },
+  {
+    id: 'log-source-failure',
+    name: 'Log Source Failure/Data Loss Detected',
+    category: 'SIEM & System Alerts',
+    description: 'A critical log source (e.g., Domain Controller, Firewall, EDR) stopped sending data to the SIEM, creating a blind spot.',
+    causes: [
+      'Attacker disabling logging to evade detection.',
+      'Network connectivity issue or log forwarder failure.',
+      'System maintenance (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Time.** Determine the specific log source and the time logging ceased.',
+      'Step 2: **Verify Legitimacy.** Check change management for approved maintenance on the source.',
+      'Step 3: **Restore Logging.** Attempt to remotely restart the log forwarder service or fix the network connection.',
+      'Step 4: **Audit Source.** If logging was intentionally disabled, investigate the source system for signs of compromise during the blind period.',
+      'Step 5: **Backfill Logs.** If possible, retrieve and ingest the missed logs manually.',
+    ],
+    queries: [
+      { tool: 'SIEM Health Monitor', query: 'log_source="[CRITICAL_SOURCE]" AND status="Down"' },
+    ],
+    tools: ['SIEM Health Monitor', 'System Administration Tools', 'Change Management System'],
+    escalation: 'CRITICAL. Escalate immediately if the source is a Domain Controller or core security device.',
+  },
 
-  // --- 9. Incident Response / Automation Triggers (Total: 1) ---
+  // --- 9. Incident Response / Automation Triggers (Total: 2) ---
   {
     id: 'automated-containment-triggered',
     name: 'Automated Containment Triggered',
@@ -598,6 +1136,28 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['SOAR Platform', 'SIEM', 'EDR Console'],
     escalation: 'Escalate if the automated containment failed or if the contained asset is a critical production system.',
+  },
+  {
+    id: 'quarantine-bypass-attempt',
+    name: 'Quarantine Bypass Attempt',
+    category: 'Incident Response / Automation Triggers',
+    description: 'A host or user attempted to bypass or disable an automated containment measure (e.g., re-enabling network access after isolation, restoring a quarantined file).',
+    causes: [
+      'Attacker actively fighting containment measures.',
+      'User attempting to restore a legitimate file (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Action.** Determine the host/user and the specific containment measure being bypassed.',
+      'Step 2: **Re-enforce Containment.** Immediately re-apply the containment measure (e.g., re-isolate the host, re-suspend the account).',
+      'Step 3: **Manual Intervention.** Switch to manual containment methods that are harder to bypass (e.g., physical network disconnect).',
+      'Step 4: **Forensic Analysis.** Investigate the host for tools or scripts used to bypass the security controls.',
+      'Step 5: **Remediation.** If malicious, re-image the host and investigate the user account for compromise.',
+    ],
+    queries: [
+      { tool: 'EDR/SOAR Logs', query: 'event_type="Containment_Failure" OR event_type="Network_Rejoin_Attempt"' },
+    ],
+    tools: ['EDR Console', 'SOAR Platform', 'Network Administration Tools'],
+    escalation: 'CRITICAL. Escalate immediately, as the attacker is actively engaged and resisting defense.',
   },
 ];
 
