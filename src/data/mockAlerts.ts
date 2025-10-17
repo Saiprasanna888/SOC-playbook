@@ -70,6 +70,29 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Active Directory/IAM Console', 'Change Management System', 'SIEM'],
     escalation: 'High priority. Escalate immediately if the creator account was compromised.',
   },
+  {
+    id: 'failed-mfa-login',
+    name: 'Failed MFA Login in Cloud Console',
+    category: 'Authentication & Access',
+    description: 'Multiple failed attempts to satisfy the Multi-Factor Authentication requirement, often following a successful password entry, indicating an MFA bypass attempt (e.g., push bombing).',
+    causes: [
+      'Attacker possessing valid credentials attempting to bypass MFA.',
+      'User error or device malfunction (False Positive).',
+      'MFA push bombing attack.',
+    ],
+    actions: [
+      'Step 1: **Identify User and Source.** Determine the user account and the source IP address attempting the login.',
+      'Step 2: **Contact User.** Contact the user out-of-band to verify if they are currently attempting to log in and receiving MFA prompts.',
+      'Step 3: **Containment.** If unauthorized, immediately block the source IP and temporarily disable the user\'s MFA method (e.g., revoke session tokens).',
+      'Step 4: **Review MFA Logs.** Check the MFA provider logs for the type of failure (e.g., denied push, incorrect code).',
+      'Step 5: **Remediation.** If confirmed malicious, force a password reset and enroll the user in a stronger MFA method (e.g., FIDO2 key instead of push notification).',
+    ],
+    queries: [
+      { tool: 'Cloud Identity Logs', query: 'LoginEvents | where ResultType == 500121 and FailureReason contains "MFA"' },
+    ],
+    tools: ['Identity Provider Logs', 'MFA Management Console', 'Communication Tools'],
+    escalation: 'Escalate if the targeted user is high-privilege or if the attack persists after initial containment.',
+  },
 
   // --- 2. Network & Firewall Alerts ---
   {
@@ -168,6 +191,29 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'Memory Forensic Tools', 'SIEM'],
     escalation: 'Escalate immediately, as fileless attacks indicate a sophisticated and active threat actor.',
   },
+  {
+    id: 'suspicious-process-lolbas',
+    name: 'Suspicious Process Execution (LOLBAS)',
+    category: 'Endpoint & Malware',
+    description: 'Detection of a legitimate system utility (e.g., certutil, bitsadmin, mshta) being executed with suspicious command-line arguments, often used for downloading malware or persistence.',
+    causes: [
+      'Attacker using Living Off the Land Binaries (LOLBAS) to evade detection.',
+      'Malware payload executing via a trusted process.',
+    ],
+    actions: [
+      'Step 1: **Identify Process and Arguments.** Determine the exact utility used (e.g., `certutil.exe`) and the full command line arguments, looking for external URLs or unusual file paths.',
+      'Step 2: **Isolate Host.** Immediately isolate the affected endpoint from the network.',
+      'Step 3: **Check Parent Process.** Review the process tree to identify the parent process that launched the suspicious utility (e.g., a browser, a document reader).',
+      'Step 4: **Analyze Network Connections.** Check network logs for connections made by the utility to external IPs/domains mentioned in the arguments.',
+      'Step 5: **IOC Extraction.** Extract any downloaded files or scripts for sandbox analysis.',
+      'Step 6: **Remediation.** If malicious, follow the Malware Eradication playbook, focusing on persistence removal and re-imaging.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'process_name IN ("certutil.exe", "bitsadmin.exe") AND command_line CONTAINS "urlcache"' },
+    ],
+    tools: ['EDR Console', 'Network Logs', 'Sandbox Analysis'],
+    escalation: 'Escalate if the process was used to download and execute a secondary payload.',
+  },
 
   // --- 4. Email & Phishing Alerts ---
   {
@@ -218,6 +264,31 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['Cloud Provider Console (IAM)', 'Cloud Audit Logs', 'SIEM'],
     escalation: 'Escalate if the activity involves creating new administrative users or modifying network security to allow external access.',
+  },
+  {
+    id: 'public-s3-bucket-exposure',
+    name: 'Public S3 Bucket Exposure',
+    category: 'Cloud Security',
+    description: 'Detection of a cloud storage bucket configured for public read or write access, potentially exposing sensitive data.',
+    causes: [
+      'Misconfiguration during deployment (e.g., "Everyone" access granted).',
+      'Automated script error or manual oversight.',
+      'Lack of continuous cloud security posture management (CSPM).',
+    ],
+    actions: [
+      'Step 1: **Verify Public Access.** Immediately confirm the public access status of the identified bucket using the cloud provider console.',
+      'Step 2: **Containment.** Change the bucket policy immediately to restrict access to internal users only (or specific roles/IPs).',
+      'Step 3: **Scope Assessment.** Determine what data was stored in the bucket and if it contained sensitive information (PII, IP).',
+      'Step 4: **Audit Logs.** Review cloud access logs for the bucket to identify any unauthorized external access or downloads during the exposure window.',
+      'Step 5: **Remediation.** If sensitive data was exposed, follow data breach notification procedures.',
+      'Step 6: **Preventative Action.** Update Infrastructure as Code (IaC) templates and enforce CSPM policies to prevent recurrence.',
+    ],
+    queries: [
+      { tool: 'AWS CloudTrail', query: 'eventName=PutBucketAcl AND requestParameters.acl="public-read"' },
+      { tool: 'CSPM Tool', query: 'search resource_type="s3_bucket" AND public_access="true"' },
+    ],
+    tools: ['Cloud Provider Console (IAM/Storage)', 'CSPM Tool', 'Cloud Access Logs'],
+    escalation: 'Escalate immediately if PII, financial data, or critical intellectual property was exposed.',
   },
 
   // --- 6. Data & Insider Threat Alerts ---
