@@ -1,7 +1,7 @@
 export interface AlertPlaybook {
   id: string;
   name: string;
-  category: 'Authentication' | 'Network' | 'Endpoint' | 'Data Security' | 'Cloud' | 'Other';
+  category: 'Authentication & Access' | 'Network & Firewall' | 'Endpoint & Malware' | 'Email & Phishing' | 'Cloud Security' | 'Data & Insider Threat' | 'Threat Intelligence & External' | 'SIEM & System Alerts' | 'Incident Response / Automation Triggers';
   description: string;
   causes: string[];
   actions: string[];
