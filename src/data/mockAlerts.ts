@@ -218,7 +218,7 @@ export const mockAlerts: AlertPlaybook[] = [
       'Step 1: **Identify Changer and Target.** Determine the user who made the change and the user who was added to the group.',
       'Step 2: **Verify Change Control.** Check the change management system for an approved ticket corresponding to this creation time.',
       'Step 3: **Containment.** If unauthorized, immediately remove the user from the high-privilege group.',
-      'Step 4: **Investigate Changer.** If the changer account was compromised, suspend it and follow the Compromised Account playbook.',
+      'Step 4: **Investigate Changer.** If the creator account was compromised, suspend it and follow the Compromised Account playbook.',
       'Step 5: **Audit Activity.** Review all activity of the newly privileged user since the change occurred.',
     ],
     queries: [
@@ -530,7 +530,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Active Directory Management Tools', 'SIEM'],
     escalation: 'High priority. Trust modifications can lead to enterprise-wide compromise.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'ad-password-never-expires-change',
     name: 'Password Never Expires Flag Set on User Account',
@@ -552,7 +551,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Active Directory Management Tools', 'SIEM'],
     escalation: 'Escalate if the affected user is high-value or the change was unauthorized.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'ad-admin-sdholder-modification',
     name: 'Modification of AdminSDHolder or Protected Group',
@@ -574,7 +572,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Active Directory Management Tools', 'Forensic Toolkit'],
     escalation: 'CRITICAL. Indicates a deep, persistent domain compromise.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'vpn-session-hijack',
     name: 'VPN Session Hijack Detected (IP Change Mid-Session)',
@@ -596,6 +593,28 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['VPN Concentrator Logs', 'Identity Provider'],
     escalation: 'High priority. Confirmed session compromise.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'ad-user-account-disabled',
+    name: 'High Volume User Account Disablement',
+    category: 'Authentication & Access',
+    description: 'A large number of user accounts were disabled in Active Directory in a short period, potentially indicating a malicious attempt to disrupt operations or cover tracks.',
+    causes: [
+      'Compromised administrator account performing sabotage.',
+      'Misconfigured provisioning or HR offboarding script (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Changer and Scope.** Determine the identity that disabled the accounts and the list of affected users.',
+      'Step 2: **Immediate Reversal.** If unauthorized, immediately re-enable the affected accounts (if safe to do so) or suspend the changer account.',
+      'Step 3: **Verify Change Control.** Check HR/Change Management systems for mass offboarding approval.',
+      'Step 4: **Audit Changer.** If unauthorized, investigate the changer account for compromise and force a password reset.',
+    ],
+    queries: [
+      { tool: 'AD Logs', query: 'EventID=4725 | stats count by CallerUserName | where count > 50' },
+    ],
+    tools: ['Active Directory Management Tools', 'HR System', 'SIEM'],
+    escalation: 'Escalate if the disablement was unauthorized and impacts business operations.',
   },
 
   // --- 2. Network & Firewall Alerts (Total: 26) ---
@@ -1105,7 +1124,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['NetFlow Analyzer', 'Firewall/IPS'],
     escalation: 'Escalate if sensitive data transfer is confirmed.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'unusual-outbound-port',
     name: 'Unusual Outbound Port Usage (High/Ephemeral Ports)',
@@ -1128,7 +1146,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Firewall/IPS', 'NetFlow Analyzer', 'EDR'],
     escalation: 'Escalate if C2 communication is confirmed.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'internal-network-segmentation-bypass',
     name: 'Internal Network Segmentation Bypass Detected',
@@ -1150,7 +1167,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Firewall Console', 'Network Monitoring Tools'],
     escalation: 'CRITICAL. Indicates a fundamental failure in network defense.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'high-volume-failed-api-calls',
     name: 'High Volume Failed API Calls to External Service',
@@ -1171,6 +1187,28 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['Web Proxy Logs', 'EDR', 'Communication Tools'],
     escalation: 'High priority. Risk of external service account lockout or abuse.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'unusual-outbound-ssh',
+    name: 'Unusual Outbound SSH Connection',
+    category: 'Network & Firewall',
+    description: 'An internal user workstation initiated an SSH connection (port 22) to an external IP address, which is highly unusual for standard business operations.',
+    causes: [
+      'Attacker using SSH for covert C2 communication or tunneling data.',
+      'Developer legitimately accessing a remote server (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Destination.** Determine the source host and the external destination IP.',
+      'Step 2: **Verify Legitimacy.** Contact the user/owner out-of-band to verify the connection purpose.',
+      'Step 3: **Containment.** If unauthorized, immediately isolate the source host and block the destination IP at the perimeter.',
+      'Step 4: **Forensic Analysis.** Analyze the isolated host for SSH tunneling tools or malicious scripts.',
+    ],
+    queries: [
+      { tool: 'Firewall Logs', query: 'src_ip IN (workstation_range) AND dest_port=22 AND dest_ip NOT IN (approved_external_ips)' },
+    ],
+    tools: ['Firewall/IPS', 'EDR', 'Communication Tools'],
+    escalation: 'Escalate if the connection was unauthorized and data transfer is suspected.',
   },
 
   // --- 3. Endpoint & Malware Alerts (Total: 28) ---
@@ -1508,7 +1546,7 @@ export const mockAlerts: AlertPlaybook[] = [
       'Step 4: **Remediation.** If malicious, follow the Compromised Account playbook and re-image the host.',
     ],
     queries: [
-      { tool: 'File/Share Audit Logs', query: 'user="[USER]" | stats count(share_name) as unique_shares | where count > 10' },
+      { tool: 'File/Share Audit Logs', query: 'user="[USER]" | stats count(share_name) as unique_shares | where unique_shares > 10' },
     ],
     tools: ['File Audit Logs', 'EDR', 'Identity Provider'],
     escalation: 'Escalate if sensitive shares were accessed.',
@@ -1728,7 +1766,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'Threat Intelligence'],
     escalation: 'Escalate if the files are confirmed malicious or if the activity is widespread.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'unusual-process-command-line',
     name: 'Unusual Command Line Arguments for Standard Process',
@@ -1750,7 +1787,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'Sandbox Analysis'],
     escalation: 'Escalate if the command successfully executed a payload.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'unauthorized-disk-encryption',
     name: 'Unauthorized Full Disk Encryption Attempt',
@@ -1773,7 +1809,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['EDR Console', 'Forensic Toolkit'],
     escalation: 'CRITICAL. Confirmed destructive attack.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'unusual-process-access-network-config',
     name: 'Unusual Process Accessing Network Configuration',
@@ -1794,6 +1829,72 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['EDR Console', 'System Logs'],
     escalation: 'High priority. Indicates an attempt to disrupt communication or evade detection.',
+  },
+  // --- NEW HIGH ALERT ---
+  {
+    id: 'unusual-process-access-lsass',
+    name: 'Unusual Process Accessing LSASS Memory',
+    category: 'Endpoint & Malware',
+    description: 'A non-system process attempted to read the memory of the Local Security Authority Subsystem Service (LSASS), a strong indicator of credential harvesting (e.g., Mimikatz).',
+    causes: [
+      'Attacker attempting to dump credentials for lateral movement.',
+      'Post-exploitation activity by malware.',
+    ],
+    actions: [
+      'Step 1: **Immediate Isolation.** Immediately isolate the affected host.',
+      'Step 2: **Identify Process.** Determine the process name and user account attempting to access LSASS.',
+      'Step 3: **Capture Memory.** Capture a memory dump of the host for forensic analysis.',
+      'Step 4: **Remediation.** Force a password reset for the logged-in user and re-image the host.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'target_process="lsass.exe" AND access_type="Read_Memory" AND source_process NOT IN (approved_system_tools)' },
+    ],
+    tools: ['EDR Console', 'Memory Forensic Tools'],
+    escalation: 'High priority. Confirmed credential theft attempt.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'unusual-file-creation-system32',
+    name: 'Unusual File Creation in System32/SysWOW64',
+    category: 'Endpoint & Malware',
+    description: 'A non-standard or non-Microsoft signed executable or DLL was created in a critical system directory, often used for persistence or defense evasion.',
+    causes: [
+      'Malware installation or staging.',
+      'Attacker attempting to hide malicious files among legitimate system files.',
+    ],
+    actions: [
+      'Step 1: **Identify Host and File.** Determine the host, file path, and file hash.',
+      'Step 2: **Containment.** Isolate the affected host.',
+      'Step 3: **Analyze File.** Submit the file hash for sandbox analysis and verify its digital signature.',
+      'Step 4: **Remediation.** Delete the unauthorized file and re-image the host if malicious.',
+    ],
+    queries: [
+      { tool: 'EDR', query: 'event_type="File_Creation" AND file_path CONTAINS ("System32", "SysWOW64") AND digital_signature="Unsigned"' },
+    ],
+    tools: ['EDR Console', 'Sandbox Analysis'],
+    escalation: 'Escalate if the file is confirmed malicious and executed.',
+  },
+  // --- NEW CRITICAL ALERT ---
+  {
+    id: 'unauthorized-system-shutdown',
+    name: 'Unauthorized System Shutdown/Reboot',
+    category: 'Endpoint & Malware',
+    description: 'A critical server or a host under investigation was shut down or rebooted without authorization, potentially destroying volatile evidence or disrupting services.',
+    causes: [
+      'Attacker attempting to destroy evidence or break containment.',
+      'Insider threat performing sabotage.',
+    ],
+    actions: [
+      'Step 1: **Identify Host and User.** Determine the host and the user/process that initiated the shutdown.',
+      'Step 2: **Engage IR.** Notify the Incident Response Team and management immediately.',
+      'Step 3: **Forensic Analysis.** If the host is back online, immediately capture memory and disk image. If offline, ensure physical security of the device.',
+      'Step 4: **Root Cause Analysis.** Investigate the user/process for compromise or malicious intent.',
+    ],
+    queries: [
+      { tool: 'EDR/SIEM', query: 'event_type="System_Shutdown" AND hostname="[CRITICAL_SERVER]" AND user NOT IN (approved_admins)' },
+    ],
+    tools: ['EDR Console', 'Forensic Toolkit'],
+    escalation: 'CRITICAL. Indicates active sabotage or evidence destruction.',
   },
 
   // --- 4. Email & Phishing Alerts (Total: 19) ---
@@ -2148,7 +2249,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Email Security Gateway (ESG)', 'DLP System'],
     escalation: 'Escalate if sensitive data is confirmed to be in the attachment.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'unusual-email-client-login',
     name: 'Unusual Email Client Login (IMAP/POP3)',
@@ -2171,7 +2271,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Mail Server Audit Logs', 'Identity Provider'],
     escalation: 'Escalate if the login was unauthorized and data access occurred.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'mass-external-sharing',
     name: 'Mass External File Sharing from Cloud Drive',
@@ -2194,7 +2293,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Cloud Drive Audit Logs', 'DLP System', 'Legal Team'],
     escalation: 'CRITICAL. Confirmed data exposure incident.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'unusual-mailbox-search',
     name: 'Unusual Mailbox Search Activity (Targeted Recon)',
@@ -2215,6 +2313,28 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['Mail Server Audit Logs', 'Identity Provider'],
     escalation: 'High priority. Indicates targeted internal reconnaissance.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'unusual-email-forwarding-volume',
+    name: 'Unusual Email Forwarding Volume (Internal)',
+    category: 'Email & Phishing',
+    description: 'A user account is forwarding an unusually high number of internal emails to another internal user, potentially indicating internal monitoring or data staging.',
+    causes: [
+      'Compromised account forwarding data to a staging mailbox.',
+      'Legitimate bulk migration or delegation setup (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Sender and Recipient.** Determine the sender and the internal recipient of the forwarded emails.',
+      'Step 2: **Verify Legitimacy.** Contact both users out-of-band to verify the activity.',
+      'Step 3: **Audit Content.** Review a sample of the forwarded emails for sensitive content or PII.',
+      'Step 4: **Containment (If Malicious).** If unauthorized, suspend the sender account and investigate the recipient account.',
+    ],
+    queries: [
+      { tool: 'Mail Audit Logs', query: 'operation="Forward" AND recipient_domain IN (internal_domains) AND item_count > 100' },
+    ],
+    tools: ['Mail Server Audit Logs', 'Communication Tools'],
+    escalation: 'Escalate if sensitive data is being forwarded without authorization.',
   },
 
   // --- 5. Cloud Security Alerts (Total: 23) ---
@@ -2652,7 +2772,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Cloud Provider Console (Database)', 'CSPM Tool'],
     escalation: 'Medium priority. Compliance violation and increased data exposure risk.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'cloud-instance-cpu-spike',
     name: 'Unusual CPU Spike on Cloud Instance',
@@ -2675,7 +2794,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Cloud Provider Console (Monitoring)', 'EDR'],
     escalation: 'Escalate if the spike is sustained and malicious activity is confirmed.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'cloud-network-gateway-modification',
     name: 'Critical Cloud Network Gateway Modification',
@@ -2697,7 +2815,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Cloud Provider Console (Networking)', 'Cloud Audit Logs'],
     escalation: 'CRITICAL. High impact on business continuity and security.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'cloud-iam-role-trust-modification',
     name: 'IAM Role Trust Policy Modification',
@@ -2718,6 +2835,72 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['Cloud Provider Console (IAM)', 'Cloud Audit Logs'],
     escalation: 'High priority. Enables external attackers to assume high privileges.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'cloud-instance-snapshot-creation',
+    name: 'Unusual Cloud Instance Snapshot Creation',
+    category: 'Cloud Security',
+    description: 'A user or service account created a snapshot of a critical production instance or database outside of scheduled backup windows, potentially for data staging or exfiltration.',
+    causes: [
+      'Insider threat preparing to download a copy of the production environment.',
+      'Compromised account performing reconnaissance.',
+    ],
+    actions: [
+      'Step 1: **Identify Instance and Changer.** Determine the instance ID and the identity that created the snapshot.',
+      'Step 2: **Verify Legitimacy.** Contact the owner/manager out-of-band to verify the snapshot purpose.',
+      'Step 3: **Containment.** If unauthorized, immediately delete the snapshot and suspend the changer account.',
+      'Step 4: **Audit Sharing.** Check if the snapshot was shared externally or copied to an unusual region.',
+    ],
+    queries: [
+      { tool: 'Cloud Audit Logs', query: 'eventName IN ("CreateSnapshot", "CreateImage") AND time_of_day NOT IN (approved_backup_window)' },
+    ],
+    tools: ['Cloud Provider Console (Storage)', 'Cloud Audit Logs'],
+    escalation: 'Escalate if the snapshot contains sensitive data and was unauthorized.',
+  },
+  // --- NEW CRITICAL ALERT ---
+  {
+    id: 'cloud-billing-alert-spike',
+    name: 'Critical Cloud Billing Spike Detected',
+    category: 'Cloud Security',
+    description: 'A sudden, massive spike in cloud spending (e.g., 500% increase in 1 hour) often associated with compromised accounts spinning up high-cost resources (e.g., crypto mining, massive data transfer).',
+    causes: [
+      'Compromised account performing resource abuse (crypto mining, DDoS launch).',
+      'Misconfigured application loop generating excessive API calls.',
+    ],
+    actions: [
+      'Step 1: **Identify Resource.** Determine the specific service (e.g., Compute, Network Egress) causing the spike.',
+      'Step 2: **Immediate Termination.** Immediately terminate the unauthorized high-cost resources (VMs, functions, network gateways).',
+      'Step 3: **Identify Identity.** Determine the IAM user or role responsible for creating the resources and revoke their credentials.',
+      'Step 4: **Engage Vendor.** Contact the cloud provider support immediately to report the abuse and discuss billing adjustments.',
+    ],
+    queries: [
+      { tool: 'Cloud Billing Monitor', query: 'cost_increase > 500% AND time_span="1h"' },
+    ],
+    tools: ['Cloud Billing Console', 'Cloud Audit Logs', 'Cloud Provider Support'],
+    escalation: 'CRITICAL. Requires immediate executive and financial notification.',
+  },
+  // --- NEW HIGH ALERT ---
+  {
+    id: 'cloud-instance-role-change',
+    name: 'IAM Role Attached to Running Instance',
+    category: 'Cloud Security',
+    description: 'A new, high-privilege IAM role was attached to a running cloud instance (VM or container) without proper change control, potentially granting the instance broad access to other cloud services.',
+    causes: [
+      'Attacker escalating privileges from within a compromised instance.',
+      'Misconfigured automation (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Instance and Role.** Determine the instance ID and the newly attached IAM role.',
+      'Step 2: **Immediate Reversal.** Immediately detach the unauthorized IAM role from the instance.',
+      'Step 3: **Audit Instance.** Review the instance logs for commands executed immediately before the role attachment.',
+      'Step 4: **Remediation.** If unauthorized, isolate the instance and investigate the identity that performed the role attachment.',
+    ],
+    queries: [
+      { tool: 'Cloud Audit Logs', query: 'eventName="AssociateIamInstanceProfile" AND role_name="[HIGH_PRIVILEGE_ROLE]"' },
+    ],
+    tools: ['Cloud Provider Console (IAM/Compute)', 'Cloud Audit Logs'],
+    escalation: 'High priority. Indicates successful privilege escalation within the cloud environment.',
   },
 
   // --- 6. Data & Insider Threat Alerts (Total: 16) ---
@@ -3003,7 +3186,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['VPN Concentrator Logs', 'EDR', 'Communication Tools'],
     escalation: 'Escalate if the data volume is excessive and unauthorized.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'unusual-file-access-time',
     name: 'Unusual File Access Time (Off-Hours)',
@@ -3025,7 +3207,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['File Audit Logs', 'Communication Tools'],
     escalation: 'Escalate if the user is high-risk or the files are highly sensitive.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'unauthorized-data-modification-critical',
     name: 'Unauthorized Mass Data Modification (Critical System)',
@@ -3047,7 +3228,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Database Audit Logs', 'Legal Team', 'Forensic Toolkit'],
     escalation: 'CRITICAL. Confirmed data integrity breach and potential fraud.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'unusual-file-copy-external-cloud',
     name: 'Unusual File Copy to Personal Cloud Storage',
@@ -3068,6 +3248,28 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['DLP System', 'EDR Console'],
     escalation: 'High priority. Confirmed data exfiltration attempt.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'unusual-file-access-after-login',
+    name: 'Unusual File Access Immediately After Login',
+    category: 'Data & Insider Threat',
+    description: 'A user accessed a high volume of sensitive files immediately after a successful login from a new or unusual location, suggesting a compromised account prioritizing data theft.',
+    causes: [
+      'Compromised account used for rapid data exfiltration.',
+      'Attacker testing access to sensitive resources.',
+    ],
+    actions: [
+      'Step 1: **Identify User and Login.** Determine the user and the suspicious login event (IP, location).',
+      'Step 2: **Immediate Suspension.** Immediately suspend the user account and invalidate the session.',
+      'Step 3: **Audit Access.** Review the specific files accessed and their sensitivity (DLP tags).',
+      'Step 4: **Remediation.** Force a password reset and perform forensic analysis on the host if possible.',
+    ],
+    queries: [
+      { tool: 'File Audit Logs', query: 'user="[USER]" AND access_time < 5 minutes after login AND file_count > 20' },
+    ],
+    tools: ['File Audit Logs', 'Identity Provider', 'DLP System'],
+    escalation: 'Escalate if the files accessed are highly sensitive or critical.',
   },
 
   // --- 7. Threat Intelligence & External Alerts (Total: 11) ---
@@ -3242,7 +3444,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Asset Inventory', 'Vulnerability Scanner', 'Network Team'],
     escalation: 'Escalate if the asset is running a vulnerable service or contains sensitive data.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'unusual-external-api-traffic',
     name: 'Unusual External API Traffic Volume',
@@ -3264,7 +3465,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Web Proxy Logs', 'API Gateway Logs'],
     escalation: 'Escalate if the traffic is unauthorized and involves sensitive data/transactions.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'supply-chain-ioc-hit',
     name: 'Supply Chain IOC Hit (Software Dependency)',
@@ -3287,7 +3487,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Threat Intelligence Platform', 'EDR Console', 'Firewall'],
     escalation: 'CRITICAL. Requires enterprise-wide containment and executive notification.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'new-domain-registration-executive',
     name: 'New Domain Registration Impersonating Executive',
@@ -3308,6 +3507,73 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['Threat Intelligence Platform', 'Legal Team', 'Email Security Gateway'],
     escalation: 'High priority. Targeted threat against high-value personnel.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'unusual-external-port-scan',
+    name: 'External Port Scan Targeting Public Assets',
+    category: 'Threat Intelligence & External',
+    description: 'Detection of a high-volume port scan originating from an external IP address targeting the organization\'s public-facing IP range, indicating reconnaissance.',
+    causes: [
+      'Threat actor mapping external attack surface.',
+      'Automated vulnerability scanner (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Target.** Determine the source IP and the public asset being scanned.',
+      'Step 2: **Verify Legitimacy.** Check if the source IP belongs to an approved vendor or security partner.',
+      'Step 3: **Containment.** If unauthorized, block the source IP at the perimeter firewall/WAF.',
+      'Step 4: **Monitor Target.** Monitor the target asset for immediate follow-up exploitation attempts.',
+    ],
+    queries: [
+      { tool: 'Firewall/IPS Logs', query: 'event_type="External_Port_Scan" AND src_ip NOT IN (approved_scanners)' },
+    ],
+    tools: ['Firewall/IPS', 'Threat Intelligence Platform'],
+    escalation: 'Escalate if the scan is followed by targeted exploitation attempts.',
+  },
+  // --- NEW CRITICAL ALERT ---
+  {
+    id: 'external-data-leak-sensitive',
+    name: 'Sensitive Data Found in External Paste Site/Repository',
+    category: 'Threat Intelligence & External',
+    description: 'Threat intelligence detected highly sensitive corporate data (e.g., customer PII, internal network diagrams, source code snippets) posted publicly on an external site.',
+    causes: [
+      'Insider threat exfiltration.',
+      'Compromised server or cloud storage.',
+    ],
+    actions: [
+      'Step 1: **CRITICAL CONTAINMENT.** Immediately identify the source of the leak (user/server) and isolate it.',
+      'Step 2: **Scope Assessment.** Determine the volume and sensitivity of the leaked data (PII, IP, financial).',
+      'Step 3: **Legal Notification.** Notify legal, compliance, and executive management immediately.',
+      'Step 4: **Takedown.** Initiate immediate takedown procedures for the external content.',
+      'Step 5: **Remediation.** Force password resets for all accounts mentioned in the leak and perform forensic analysis on the source.',
+    ],
+    queries: [
+      { tool: 'Threat Intelligence Platform', query: 'keywords IN ("PII", "network_diagram", "source_code") AND domain IN ("pastebin.com", "github.com")' },
+    ],
+    tools: ['Threat Intelligence Platform', 'Legal Team', 'Forensic Toolkit'],
+    escalation: 'CRITICAL. Confirmed data breach requiring regulatory notification.',
+  },
+  // --- NEW HIGH ALERT ---
+  {
+    id: 'unusual-outbound-traffic-high-risk-country',
+    name: 'Unusual Outbound Traffic to High-Risk Country',
+    category: 'Threat Intelligence & External',
+    description: 'An internal host initiated a connection to a country flagged as high-risk for cyber operations (e.g., known state-sponsored activity) that is not explicitly blocked by policy.',
+    causes: [
+      'Active C2 communication to a foreign adversary.',
+      'User accessing a legitimate service hosted in a high-risk region (False Positive).',
+    ],
+    actions: [
+      'Step 1: **Identify Source and Destination.** Determine the source host and the destination country/IP.',
+      'Step 2: **Containment.** Immediately isolate the source host and block the destination IP.',
+      'Step 3: **Analyze Traffic.** Inspect the traffic payload for C2 patterns or data exfiltration.',
+      'Step 4: **Forensic Analysis.** Analyze the isolated host for malware associated with state-sponsored groups.',
+    ],
+    queries: [
+      { tool: 'Firewall Logs', query: 'dest_country IN (High_Risk_List) AND traffic_outbound > 0' },
+    ],
+    tools: ['Threat Intelligence Platform', 'Firewall/IPS', 'EDR'],
+    escalation: 'High priority. Potential state-sponsored threat.',
   },
 
   // --- 8. SIEM & System Alerts (Total: 10) ---
@@ -3464,7 +3730,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['System Administration Tools', 'SIEM Health Monitor'],
     escalation: 'Escalate if the component is a core security service and is failing.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'unusual-admin-login-security-tool',
     name: 'Unusual Admin Login to Security Tool',
@@ -3486,7 +3751,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Security Tool Audit Logs', 'Identity Provider'],
     escalation: 'Escalate if the login was unauthorized, as it grants control over defenses.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'security-tool-api-abuse',
     name: 'High Volume API Calls to Security Tool',
@@ -3508,7 +3772,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Security Tool API Logs', 'IAM Console'],
     escalation: 'CRITICAL. Indicates an attack targeting security data or controls.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'unauthorized-log-clearing',
     name: 'Unauthorized Security Log Clearing',
@@ -3529,6 +3792,73 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['EDR Console', 'System Administration Tools'],
     escalation: 'High priority. Strong indicator of malicious activity.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'siem-connector-health-degradation',
+    name: 'SIEM Connector Health Degradation (Latency)',
+    category: 'SIEM & System Alerts',
+    description: 'A critical log connector or forwarder is reporting high latency or queue buildup, indicating logs are delayed and real-time visibility is compromised.',
+    causes: [
+      'Network congestion or bandwidth saturation.',
+      'Log source generating bursts of data exceeding connector capacity.',
+      'Connector service resource exhaustion (CPU/Memory).',
+    ],
+    actions: [
+      'Step 1: **Identify Connector and Source.** Determine the affected connector and the log source(s) feeding it.',
+      'Step 2: **Troubleshoot Network.** Check network latency and bandwidth utilization between the source and the SIEM.',
+      'Step 3: **Mitigation.** If possible, temporarily reduce the volume of non-critical logs from the source or scale up connector resources.',
+      'Step 4: **Monitor Recovery.** Monitor the queue size and latency to ensure the connector recovers and processes the backlog.',
+    ],
+    queries: [
+      { tool: 'SIEM Health Monitor', query: 'connector_id="[ID]" AND latency > 60 seconds' },
+    ],
+    tools: ['SIEM Health Monitor', 'Network Monitoring Tools'],
+    escalation: 'Escalate if latency persists and affects high-priority alerts.',
+  },
+  // --- NEW CRITICAL ALERT ---
+  {
+    id: 'siem-internal-database-corruption',
+    name: 'SIEM Internal Database Corruption/Failure',
+    category: 'SIEM & System Alerts',
+    description: 'The core database or indexer of the SIEM platform reported corruption or failure, leading to loss of historical search capability or real-time indexing failure.',
+    causes: [
+      'Hardware failure on the SIEM server.',
+      'Malicious tampering with SIEM storage/indexes.',
+    ],
+    actions: [
+      'Step 1: **CRITICAL ENGAGEMENT.** Immediately notify the SIEM administration team and vendor support.',
+      'Step 2: **Isolate Indexers.** Isolate the affected indexer/database node to prevent further corruption.',
+      'Step 3: **Restore Service.** Initiate restoration procedures from the most recent known good backup of the SIEM configuration and data.',
+      'Step 4: **Audit Tampering.** If tampering is suspected, perform forensic analysis on the affected server.',
+    ],
+    queries: [
+      { tool: 'SIEM Health Monitor', query: 'component="Database" AND status="Corruption" OR "Failure"' },
+    ],
+    tools: ['SIEM Administration Console', 'Vendor Support', 'Backup Management'],
+    escalation: 'CRITICAL. Loss of SIEM functionality is an enterprise-level incident.',
+  },
+  // --- NEW HIGH ALERT ---
+  {
+    id: 'unauthorized-system-file-access-security',
+    name: 'Unauthorized Access to Security Tool Configuration Files',
+    category: 'SIEM & System Alerts',
+    description: 'A non-administrative user or process attempted to read or modify configuration files belonging to a critical security tool (e.g., EDR policy files, Firewall configuration backups).',
+    causes: [
+      'Attacker attempting to map security controls or steal configuration secrets.',
+      'Insider threat reconnaissance.',
+    ],
+    actions: [
+      'Step 1: **Identify Host and User.** Determine the host and the user/process attempting the access.',
+      'Step 2: **Immediate Isolation.** Isolate the affected host.',
+      'Step 3: **Audit Access.** Review the specific files accessed and the process lineage.',
+      'Step 4: **Remediation.** If unauthorized, re-image the host and force a password reset for the user.',
+    ],
+    queries: [
+      { tool: 'EDR/FIM', query: 'process_name NOT IN (approved_admins) AND file_path CONTAINS ("EDR_Config", "Firewall_Backup") AND operation="Read" OR "Write"' },
+    ],
+    tools: ['EDR Console', 'File Integrity Monitoring (FIM)'],
+    escalation: 'High priority. Indicates an attack targeting the security infrastructure itself.',
   },
 
   // --- 9. Incident Response / Automation Triggers (Total: 9) ---
@@ -3660,7 +3990,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['SIEM Console', 'Detection Engineering Team'],
     escalation: 'Medium priority. Focus on restoring operational efficiency.',
   },
-  // --- NEW MEDIUM ALERT ---
   {
     id: 'ir-tool-access-failure',
     name: 'IR Tool Access Failure (Credential/Network)',
@@ -3682,7 +4011,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['IR Tool Logs', 'Network Team'],
     escalation: 'Medium priority. Indicates potential attacker resistance or operational failure.',
   },
-  // --- NEW CRITICAL ALERT ---
   {
     id: 'ir-data-tampering',
     name: 'Incident Response Data Tampering Detected',
@@ -3704,7 +4032,6 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['Forensic Toolkit', 'File Integrity Monitoring (FIM)'],
     escalation: 'CRITICAL. Highest priority incident, requires external forensic assistance.',
   },
-  // --- NEW HIGH ALERT ---
   {
     id: 'soar-credential-rotation-failure',
     name: 'SOAR Automated Credential Rotation Failure',
@@ -3725,6 +4052,72 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     tools: ['SOAR Platform', 'Identity Provider'],
     escalation: 'High priority. The compromised account remains a high risk until credentials are changed.',
+  },
+  // --- NEW MEDIUM ALERT ---
+  {
+    id: 'ir-remote-access-unusual-tool',
+    name: 'IR Remote Access Using Unusual Tool',
+    category: 'Incident Response / Automation Triggers',
+    description: 'An IR team member accessed a host using a non-standard or unapproved remote access tool (e.g., VNC, TeamViewer), potentially bypassing monitoring or indicating a compromised IR workstation.',
+    causes: [
+      'IR team member bypassing standard jump box procedures (Policy Violation).',
+      'Compromised IR workstation being used by an attacker.',
+    ],
+    actions: [
+      'Step 1: **Identify User and Tool.** Determine the IR user and the unapproved tool used.',
+      'Step 2: **Verify Authorization.** Contact the IR manager out-of-band to verify the access method and purpose.',
+      'Step 3: **Audit Activity.** Review the IR workstation logs for signs of compromise or malware.',
+      'Step 4: **Remediation.** If unauthorized, suspend the IR user account and enforce policy compliance.',
+    ],
+    queries: [
+      { tool: 'EDR/Network Logs', query: 'user="[IR_USER]" AND process_name IN ("vnc.exe", "teamviewer.exe")' },
+    ],
+    tools: ['EDR Console', 'Communication Tools'],
+    escalation: 'Escalate if the access was unauthorized or the IR workstation is compromised.',
+  },
+  // --- NEW CRITICAL ALERT ---
+  {
+    id: 'soar-api-key-deletion',
+    name: 'SOAR API Key Deletion/Revocation',
+    category: 'Incident Response / Automation Triggers',
+    description: 'A critical API key used by the SOAR platform to integrate with core security tools (e.g., EDR, Firewall) was deleted or revoked, immediately disabling automated response capabilities.',
+    causes: [
+      'Attacker targeting SOAR infrastructure to disable response.',
+      'Administrative error during key rotation.',
+    ],
+    actions: [
+      'Step 1: **Identify Key and Changer.** Determine the key deleted and the identity that performed the action.',
+      'Step 2: **Immediate Restoration.** Immediately restore or recreate the API key and update the SOAR platform configuration.',
+      'Step 3: **Manual Intervention.** Switch all high-priority alerts to manual response mode until SOAR functionality is verified.',
+      'Step 4: **Investigate Changer.** If unauthorized, suspend the changer account and audit their activity.',
+    ],
+    queries: [
+      { tool: 'IAM/SOAR Audit Logs', query: 'resource_type="API_Key" AND operation="Delete" AND user NOT IN (approved_automation)' },
+    ],
+    tools: ['IAM Console', 'SOAR Platform'],
+    escalation: 'CRITICAL. Automated response is disabled, increasing risk exposure.',
+  },
+  // --- NEW HIGH ALERT ---
+  {
+    id: 'ir-forensic-image-tampering',
+    name: 'Forensic Image Tampering Detected',
+    category: 'Incident Response / Automation Triggers',
+    description: 'File integrity monitoring (FIM) detected unauthorized modification of a forensic disk image or memory dump stored in the evidence repository.',
+    causes: [
+      'Attacker attempting to destroy or alter evidence after exfiltration.',
+      'Compromised evidence storage server.',
+    ],
+    actions: [
+      'Step 1: **Identify File and Changer.** Determine the specific forensic file modified and the user/process responsible.',
+      'Step 2: **CRITICAL ISOLATION.** Immediately isolate the evidence repository server.',
+      'Step 3: **Verify Integrity.** Check the cryptographic hash of the modified file against the original hash recorded at the time of acquisition.',
+      'Step 4: **Legal Notification.** Notify legal and management that the integrity of the evidence chain has been compromised.',
+    ],
+    queries: [
+      { tool: 'FIM Logs', query: 'file_path CONTAINS "forensic_images" AND operation="Modify"' },
+    ],
+    tools: ['File Integrity Monitoring (FIM)', 'Forensic Toolkit', 'Legal Team'],
+    escalation: 'High priority. Compromises the entire investigation chain.',
   },
 ];
 
