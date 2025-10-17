@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, BookOpen, Search } from 'lucide-react';
+import { Shield, BookOpen, Search, Github, Linkedin } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { Input } from './ui/input';
 import { MadeWithDyad } from './made-with-dyad';
@@ -50,10 +50,33 @@ const Layout: React.FC<LayoutProps> = ({ children, onSearchChange, searchTerm })
 
           {/* Actions */}
           <nav className="flex items-center space-x-1">
-            {/* Playbooks Link */}
-            <Link to="/" className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors">
+            {/* Playbooks Link (Home) */}
+            <Link to="/" className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors" aria-label="Playbooks Home">
                 <BookOpen className="h-4 w-4" />
             </Link>
+            
+            {/* GitHub Link */}
+            <a
+              href="https://github.com/Saiprasanna888"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors"
+              aria-label="GitHub Profile"
+            >
+              <Github className="w-4 h-4" />
+            </a>
+
+            {/* LinkedIn Link */}
+            <a
+              href="https://www.linkedin.com/in/muppallasaiprasanna/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors"
+              aria-label="LinkedIn Profile"
+            >
+              <Linkedin className="w-4 h-4" />
+            </a>
+
             <ThemeToggle />
           </nav>
         </div>
