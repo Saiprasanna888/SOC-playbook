@@ -20,8 +20,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onSearchChange, searchTerm })
           {/* Logo and Title */}
           <Link to="/" className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl tracking-tight text-foreground hidden sm:inline">
-              SOC Playbook Dictionary
+            <span className="font-extrabold text-xl tracking-tight text-foreground hidden sm:inline">
+              <span className="text-primary">SOCpedia</span> by Saiprasanna
             </span>
           </Link>
 
