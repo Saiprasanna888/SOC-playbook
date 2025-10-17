@@ -151,9 +151,11 @@ const AlertDetail: React.FC = () => {
           <div className="mb-6 p-6 border border-red-500/50 bg-red-500/10 rounded-lg shadow-inner">
             <h3 className="text-xl font-bold mb-3 flex items-center text-red-600 dark:text-red-400">
               <AlertTriangle className="w-5 h-5 mr-2 animate-ping-slow" />
-              Escalation Criteria & Mitigation
+              When to Escalate
             </h3>
-            <p className="text-gray-700 dark:text-gray-300">{alert.escalation}</p>
+            <p className="text-gray-700 dark:text-gray-300">
+              {alert.escalation}
+            </p>
           </div>
 
         </CardContent>
