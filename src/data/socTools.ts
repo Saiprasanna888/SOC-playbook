@@ -159,7 +159,7 @@ const siemTools: ToolDetail[] = [
     ],
     workflow: [
       'Step 1 – Data Collection: Beats agents collect data and send it to Logstash.',
-      'Step 2 – Parsing: Logstash processes and normalizes the data structure.',
+      'Step 2 – Parsing: Logstash processes and transforms the data structure.',
       'Step 3 – Indexing: Elasticsearch stores the processed data in indices.',
       'Step 4 – Detection: Elastic Security rules run against the indices to find threats.',
       'Step 5 – Alert: Alerts are generated and displayed in the Kibana SIEM dashboard.',
@@ -773,7 +773,7 @@ const idsIpsTools: ToolDetail[] = [
     architecture: [
       'Sensor Nodes: Collects traffic and runs Suricata/Zeek.',
       'Suricata/Zeek: Performs detection and analysis.',
-      'Logstash: Processes and normalizes the logs.',
+      'Logstash: Processes and transforms the logs.',
       'Elasticsearch: Stores the indexed data.',
       'Kibana Dashboard: Provides the unified interface for alerts and hunting.',
       'Alert Visualization: Tools like Squert or TheHive for case management.',
@@ -1011,6 +1011,139 @@ const firewallTools: ToolDetail[] = [
   },
 ];
 
+// --- Network Models ---
+const networkModels: ToolDetail[] = [
+  // --- OSI Model ---
+  {
+    name: 'OSI Model – 7 Layers Explained',
+    purpose: 'The Open Systems Interconnection (OSI) model is a conceptual framework used to describe the functions of a networking system. It helps SOC analysts understand where security events occur and which protocols are involved.',
+    keyFeatures: [
+      '7 distinct layers (Physical to Application)',
+      'Standardized communication framework',
+      'Helps isolate network problems and security incidents',
+      'Foundation for understanding protocol stacks',
+    ],
+    advantages: [
+      'Provides a common language for network professionals',
+      'Simplifies troubleshooting by isolating issues to a specific layer',
+      'Crucial for understanding firewall and IDS/IPS placement',
+    ],
+    usage: 'Used for network design, troubleshooting, and classifying security events (e.g., "This is a Layer 7 attack").',
+    architecture: [
+      'Layer 7 (Application): Provides user interface and services (HTTP, DNS, SMTP).',
+      'Layer 6 (Presentation): Handles data formatting, encryption, and compression (SSL/TLS, JPEG).',
+      'Layer 5 (Session): Manages communication sessions (NetBIOS, RPC).',
+      'Layer 4 (Transport): Provides reliable end-to-end data transfer (TCP, UDP).',
+      'Layer 3 (Network): Handles routing and logical addressing (IP, ICMP, Routers).',
+      'Layer 2 (Data Link): Handles physical addressing and error checking (MAC, Switches).',
+      'Layer 1 (Physical): Transmits raw bits over media (Cables, Hubs, NICs).',
+    ],
+    workflow: [
+      'Step 1 – Physical Layer: Transmitting raw bits (0s and 1s) over physical media.',
+      'Step 2 – Data Link Layer: Ensures reliable data transfer between two directly connected nodes using MAC addresses.',
+      'Step 3 – Network Layer: Handles routing, addressing (IP), and packet forwarding between networks.',
+      'Step 4 – Transport Layer: Provides reliable end-to-end communication, error checking, and flow control (TCP/UDP).',
+      'Step 5 – Session Layer: Manages sessions between communicating systems (establishing, maintaining, terminating).',
+      'Step 6 – Presentation Layer: Transforms data into a readable format, handling encryption and compression (TLS).',
+      'Step 7 – Application Layer: Provides user-facing network services and interfaces (HTTP, DNS).',
+    ],
+    dailyLifeExample: 'The OSI Model is like the postal service. Layer 7 is writing the letter (the application data). Layer 6 is translating it into a common language and sealing it (encryption). Layer 4 is deciding if you need a receipt (TCP) or just dropping it off (UDP). Layer 3 is the post office routing the letter across cities (IP). Layer 1 is the truck physically driving the letter.',
+    icon: Globe,
+    iconColor: 'text-blue-400',
+  },
+  // --- TCP/IP Model ---
+  {
+    name: 'TCP/IP Model – Protocol Stack',
+    purpose: 'The TCP/IP model is the practical, four-layer protocol stack used by the internet. SOC analysts primarily focus on this model as it directly maps to real-world protocols and security controls.',
+    keyFeatures: [
+      '4 layers (Application, Transport, Internet, Network Access)',
+      'Practical implementation of networking standards',
+      'Focuses on end-to-end communication',
+      'Protocols: TCP, UDP, IP, HTTP, DNS',
+    ],
+    advantages: [
+      'Directly reflects how the internet works',
+      'Simpler and more concise than the OSI model',
+      'Essential for packet analysis and firewall rule creation',
+    ],
+    usage: 'Used for packet analysis, defining firewall rules (ports and protocols), and understanding network flow.',
+    architecture: [
+      'Layer 4 (Application): Combines OSI Layers 5, 6, and 7 (HTTP, DNS, SMTP).',
+      'Layer 3 (Transport): Provides connection-oriented (TCP) or connectionless (UDP) data delivery.',
+      'Layer 2 (Internet): Handles logical addressing and routing (IP, ICMP).',
+      'Layer 1 (Network Access): Combines OSI Layers 1 and 2 (Ethernet, MAC, NICs).',
+    ],
+    workflow: [
+      'Step 1 – Application Layer: Data is prepared for transmission (e.g., HTTP request).',
+      'Step 2 – Transport Layer: Data is segmented and encapsulated with TCP/UDP headers (port numbers added).',
+      'Step 3 – Internet Layer: Segments are encapsulated into IP packets (source/destination IP addresses added).',
+      'Step 4 – Network Access Layer: IP packets are framed and sent over the physical network using MAC addresses.',
+    ],
+    dailyLifeExample: 'If the OSI model is the blueprint, the TCP/IP model is the actual building. When you browse a website, your browser (Application) uses TCP (Transport) to send data packets (Internet) over your Wi-Fi card (Network Access).',
+    icon: Terminal,
+    iconColor: 'text-sky-500',
+  },
+  // --- Other SOC Networking Concepts ---
+  {
+    name: 'Network Segmentation (VLANs/ACLs)',
+    purpose: 'The practice of dividing a computer network into smaller, isolated segments to limit the lateral movement of threats and enforce granular security policies.',
+    keyFeatures: [
+      'VLANs (Virtual Local Area Networks): Logical separation at Layer 2.',
+      'ACLs (Access Control Lists): Rules enforced by routers/firewalls at Layer 3/4.',
+      'Zero Trust Microsegmentation: Isolating individual workloads or applications.',
+    ],
+    advantages: [
+      'Limits blast radius during an incident.',
+      'Enforces least privilege network access.',
+      'Improves network performance and monitoring.',
+    ],
+    usage: 'Crucial for containment playbooks, preventing lateral movement, and compliance (e.g., isolating PCI data).',
+    architecture: [
+      'VLANs: Configured on switches to logically group devices.',
+      'Firewalls: Deployed between segments to inspect and control traffic flow.',
+      'NAC (Network Access Control): Ensures only authorized devices connect to specific segments.',
+    ],
+    workflow: [
+      'Step 1 – Policy Definition: Define security zones (e.g., Server Zone, User Zone, DMZ).',
+      'Step 2 – Implementation: Configure VLANs on switches and ACLs on routers/firewalls.',
+      'Step 3 – Monitoring: Use NetFlow/SIEM to monitor traffic between segments for unauthorized connections.',
+      'Step 4 – Containment: If a host is compromised, isolate its segment or move the host to a quarantine VLAN.',
+    ],
+    dailyLifeExample: 'Network segmentation is like having separate, locked rooms in a building instead of one open floor plan. If a fire (malware) starts in one room, the fire doors (ACLs) prevent it from spreading to the rest of the building.',
+    icon: ShieldAlert,
+    iconColor: 'text-red-500',
+  },
+  {
+    name: 'NetFlow / IPFIX',
+    purpose: 'NetFlow (Cisco) and IPFIX (IETF standard) are protocols used to collect IP traffic information (metadata) as it flows through network devices, providing visibility into network conversations.',
+    keyFeatures: [
+      'Flow Records: Captures metadata (source/dest IP, ports, protocol, byte count).',
+      'Traffic Volume Analysis: Measures bandwidth usage and data transfer rates.',
+      'Anomaly Detection: Identifies unusual traffic patterns (e.g., high outbound volume, port scans).',
+    ],
+    advantages: [
+      'Low overhead compared to full packet capture (PCAP).',
+      'Excellent for detecting data exfiltration and internal reconnaissance.',
+      'Scalable for large networks.',
+    ],
+    usage: 'Used by SOC analysts for network forensics, identifying C2 communication, and detecting internal scanning/lateral movement.',
+    architecture: [
+      'Exporters: Routers/switches that generate and export flow records.',
+      'Collectors: Servers that receive, store, and aggregate flow records.',
+      'Analyzers: Tools (often integrated into SIEM) that process flow data for visualization and alerting.',
+    ],
+    workflow: [
+      'Step 1 – Export: Network devices send flow records to the collector.',
+      'Step 2 – Collection: The collector aggregates flow records into a database.',
+      'Step 3 – Analysis: SIEM/Analyzer queries the flow data (e.g., "Show me all connections from this compromised IP").',
+      'Step 4 – Detection: Rules flag anomalies like high volume outbound traffic or unusual port usage.',
+    ],
+    dailyLifeExample: 'NetFlow is like the phone company\'s billing record. It doesn\'t record the content of the conversation (PCAP), but it records who called whom, when, and for how long. This is enough information to spot suspicious communication patterns.',
+    icon: Database,
+    iconColor: 'text-purple-600',
+  },
+];
+
 // --- Main Tool Categories Structure ---
 export const socToolCategories: ToolCategory[] = [
   { title: 'SIEM Tools', icon: Brain, description: 'Security Information and Event Management platforms for centralized log analysis and alerting.', color: 'text-cyan-400', details: siemTools },
@@ -1018,6 +1151,6 @@ export const socToolCategories: ToolCategory[] = [
   { title: 'EDR Tools', icon: Shield, description: 'Endpoint Detection and Response solutions for monitoring and responding to threats on endpoints.', color: 'text-green-400', details: edrTools },
   { title: 'IDS / IPS Tools', icon: AlertTriangle, description: 'Intrusion Detection and Prevention Systems for monitoring network traffic for malicious activity.', color: 'text-red-400', details: idsIpsTools },
   { title: 'Firewalls', icon: Flame, description: 'Network security systems that monitor and control incoming and outgoing network traffic.', color: 'text-orange-400', details: firewallTools },
-  { title: 'Network Models', icon: Globe, description: 'Conceptual models and frameworks used to understand network architecture and security zones.', color: 'text-blue-400', details: [] },
+  { title: 'Network Models', icon: Globe, description: 'Conceptual models and frameworks used to understand network architecture and security zones.', color: 'text-blue-400', details: networkModels },
   { title: 'Frameworks & Standards', icon: BookOpen, description: 'Industry standards and frameworks like MITRE ATT&CK, NIST, and CIS Controls.', color: 'text-yellow-400', details: [] },
 ];
