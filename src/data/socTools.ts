@@ -22,6 +22,192 @@ export interface ToolCategory {
   details: ToolDetail[];
 }
 
+// --- SIEM Tools ---
+const siemTools: ToolDetail[] = [
+  {
+    name: 'Splunk Enterprise Security (ES)',
+    purpose: 'Splunk Enterprise Security is one of the most widely used SIEM platforms that helps SOCs collect, analyze, and correlate security data across enterprise environments.',
+    keyFeatures: [
+      'Real-time log correlation and analytics',
+      'Threat Intelligence integration',
+      'Custom dashboards and visualizations',
+      'Behavioral analytics and anomaly detection',
+      'SOAR integration for automated response',
+    ],
+    advantages: [
+      'Highly scalable and supports multiple data sources',
+      'Powerful SPL (Search Processing Language) for hunting',
+      'Real-time insights and custom correlation rules',
+      'Excellent integration with third-party tools',
+    ],
+    usage: 'Used for log management, event correlation, incident detection, and compliance monitoring in SOC environments.',
+    architecture: [
+      'Data Sources: Collects logs from endpoints, networks, and applications.',
+      'Forwarders: Agents installed on sources to send data securely.',
+      'Indexers: Stores and processes the raw data, making it searchable.',
+      'Search Heads: Provides the user interface and runs searches/reports.',
+      'Splunk ES Dashboard: The security interface for incident review and correlation.',
+      'SOAR Integration (Splunk Phantom): Enables automated incident response.',
+    ],
+    workflow: [
+      'Step 1 – Data Collection: Logs are gathered from all sources via Forwarders.',
+      'Step 2 – Indexing: Data is stored and tagged in Indexers for fast retrieval.',
+      'Step 3 – Correlation: Splunk ES runs correlation searches (using SPL) to link related events across different logs.',
+      'Step 4 – Alert Generation: When a correlation rule is met, a security alert (or "Notable Event") is created.',
+      'Step 5 – Investigation: Analysts use the ES dashboard to triage the alert and perform deep dives using SPL.',
+      'Step 6 – Automated Response: Alerts can trigger SOAR playbooks (via Phantom) for immediate containment.',
+    ],
+    dailyLifeExample: 'Splunk ES is like a massive, high-speed library that collects every single piece of paper (log) from every department. It has a powerful search engine (SPL) that can instantly find patterns, like "Show me every time a user failed to log in 5 times AND accessed a sensitive file within the next 10 minutes."',
+    icon: Zap,
+    iconColor: 'text-orange-600',
+  },
+  {
+    name: 'IBM QRadar',
+    purpose: 'IBM QRadar is an enterprise SIEM solution designed for large-scale threat detection and compliance management through data correlation and machine learning.',
+    keyFeatures: [
+      'Log and network flow collection',
+      'Offense correlation engine',
+      'AI-based anomaly detection',
+      'Threat intelligence feed integration',
+      'SOAR capability via QRadar SOAR',
+    ],
+    advantages: [
+      'Accurate offense correlation reduces false positives',
+      'Built-in threat intelligence and behavior analytics',
+      'Strong incident visualization',
+      'Seamless integration with IBM Cloud Pak for Security',
+    ],
+    usage: 'Used by SOCs for advanced correlation, network flow analysis, and compliance reporting.',
+    architecture: [
+      'Data Sources: Sends logs and network flow data (NetFlow, sFlow).',
+      'Event Collectors: Gathers and normalizes raw event data.',
+      'Event Processors: Correlates events and flows against rules and baselines.',
+      'QRadar Console: Central management and visualization interface.',
+      'Integrated SOAR: Performs playbook-based response actions based on offenses.',
+    ],
+    workflow: [
+      'Step 1 – Data Collection: Events and network flows are collected and normalized.',
+      'Step 2 – Correlation: The system analyzes normalized data against thousands of rules.',
+      'Step 3 – Offense Creation: When a rule is triggered, QRadar groups related events into a single "Offense" (incident).',
+      'Step 4 – Investigation: Analysts review the Offense, which provides a risk score and a timeline of correlated events.',
+      'Step 5 – Response: Analysts manually respond or trigger QRadar SOAR for automated actions.',
+      'Step 6 – Reporting: Compliance and security reports are generated based on the processed data.',
+    ],
+    dailyLifeExample: 'QRadar is like a highly trained police detective. Instead of just seeing a broken window (one log event), it connects the broken window to the muddy footprints, the missing safe, and the getaway car sighting (multiple correlated events) and packages it all into one "Offense" for the investigator.',
+    icon: Brain,
+    iconColor: 'text-blue-600',
+  },
+  {
+    name: 'Microsoft Sentinel (Azure)',
+    purpose: 'Microsoft Sentinel is a cloud-native SIEM + SOAR built on Azure for scalable security monitoring and automated incident response.',
+    keyFeatures: [
+      'Cloud-native scalability with pay-as-you-go model',
+      'Kusto Query Language (KQL) for hunting',
+      'Integrated playbooks (Logic Apps)',
+      'Machine learning–based anomaly detection',
+      'Integration with M365, Azure AD, and Defender',
+    ],
+    advantages: [
+      'Fully managed and scalable',
+      'Cost-effective for cloud environments',
+      'Seamless integration with Microsoft ecosystem',
+      'Powerful automation using Logic Apps',
+    ],
+    usage: 'Used by cloud SOC teams for multi-source data collection, automated response, and advanced threat hunting.',
+    architecture: [
+      'Data Connectors: Ingests data from various sources (Azure, M365, AWS, on-prem) into the workspace.',
+      'Log Analytics Workspace: Central data repository where all logs are stored and indexed.',
+      'Sentinel Analytics Rules: Runs KQL queries against the workspace data to detect threats.',
+      'Incidents: Grouping of related alerts for analyst investigation.',
+      'Playbooks (Logic Apps): Automated workflows triggered by incidents for enrichment and response.',
+    ],
+    workflow: [
+      'Step 1 – Data Ingestion: Logs are streamed into the Log Analytics Workspace via connectors.',
+      'Step 2 – Analytics Rules: KQL queries run continuously to identify suspicious patterns.',
+      'Step 3 – Alert Creation: A match triggers an alert, which is then grouped into an Incident.',
+      'Step 4 – Incident Grouping: Sentinel uses AI to group related alerts into a single incident for efficient triage.',
+      'Step 5 – Automated Response: The incident triggers a Logic App Playbook (SOAR) to perform actions like host isolation or user notification.',
+      'Step 6 – Hunting: Analysts use KQL to proactively search the Log Analytics Workspace for threats not yet detected by rules.',
+    ],
+    dailyLifeExample: 'Sentinel is like a cloud-based security hub for a smart city. It automatically pulls data from all city services (traffic, power, public Wi-Fi) and uses smart rules (KQL) to spot problems. If a problem is found, it instantly triggers an automated response (Logic App) like shutting down a compromised server.',
+    icon: Cloud,
+    iconColor: 'text-cyan-400',
+  },
+  {
+    name: 'Elastic SIEM (ELK Stack)',
+    purpose: 'Elastic SIEM, part of the ELK Stack (Elasticsearch, Logstash, Kibana), provides open-source and cloud-based threat detection and response capabilities.',
+    keyFeatures: [
+      'Log ingestion and parsing via Logstash',
+      'Powerful search and visualization using Kibana',
+      'Detection rules and alerting engine',
+      'Elastic Agent for endpoint telemetry',
+      'Integration with Elastic Security for XDR',
+    ],
+    advantages: [
+      'Open-source and highly customizable',
+      'Flexible deployment (on-premise or cloud)',
+      'Cost-effective for startups and mid-size SOCs',
+      'Integrates easily with Beats, Zeek, and Suricata',
+    ],
+    usage: 'Used for centralized log monitoring, detection, and visualization in modern SOC labs.',
+    architecture: [
+      'Beats/Logstash: Data shippers (Beats) and processors (Logstash) collect and normalize data.',
+      'Elasticsearch: Distributed search and analytics engine that stores the indexed data.',
+      'Kibana (SIEM Dashboard): Visualization layer for searching, dashboarding, and managing alerts.',
+      'Elastic Agent: Provides endpoint telemetry and security capabilities.',
+      'Detection Rules: Runs against Elasticsearch data to generate alerts.',
+    ],
+    workflow: [
+      'Step 1 – Data Collection: Beats agents collect data and send it to Logstash.',
+      'Step 2 – Parsing: Logstash processes and normalizes the data structure.',
+      'Step 3 – Indexing: Elasticsearch stores the processed data in indices.',
+      'Step 4 – Detection: Elastic Security rules run against the indices to find threats.',
+      'Step 5 – Alert: Alerts are generated and displayed in the Kibana SIEM dashboard.',
+      'Step 6 – Investigation: Analysts use Kibana\'s search capabilities to drill down into the raw logs and timeline.',
+      'Step 7 – Response: Manual or automated response actions are initiated.',
+    ],
+    dailyLifeExample: 'Elastic SIEM is like a highly flexible, custom-built data warehouse. You decide exactly how the data is organized and displayed (Kibana), and you can search through billions of records instantly to find a specific needle (threat) in the haystack.',
+    icon: Search,
+    iconColor: 'text-yellow-500',
+  },
+  {
+    name: 'Securonix Next-Gen SIEM',
+    purpose: 'Securonix uses behavior analytics (UEBA) and big data technologies to detect insider threats and advanced persistent attacks.',
+    keyFeatures: [
+      'Behavioral analytics with UEBA',
+      'Big Data scalability using Hadoop/Snowflake',
+      'Threat modeling and anomaly scoring',
+      'Integrated SOAR for automated actions',
+      'Cloud and hybrid deployment support',
+    ],
+    advantages: [
+      'Excellent insider threat detection',
+      'Machine learning–based correlation',
+      'Scalable architecture',
+      'Supports hybrid and multi-cloud environments',
+    ],
+    usage: 'Used in enterprise SOCs for detecting insider threats, APTs, and policy violations.',
+    architecture: [
+      'Data Sources: Collects logs, network flows, and identity data.',
+      'Data Lake (Hadoop/Snowflake): Stores massive volumes of raw and processed data.',
+      'Correlation Engine: Applies security rules and threat models.',
+      'Analytics (UEBA): Builds baselines of normal user behavior and scores anomalies.',
+      'SOAR: Integrated platform for automated response actions.',
+    ],
+    workflow: [
+      'Step 1 – Data Collection: Data is ingested into the Big Data platform.',
+      'Step 2 – UEBA Analysis: The system learns the normal behavior of every user and entity.',
+      'Step 3 – Alert: An anomaly (e.g., a user accessing files they never touch) triggers an alert with a high risk score.',
+      'Step 4 – Investigation: Analysts review the risk score and the behavioral timeline to confirm the insider threat or compromise.',
+      'Step 5 – SOAR Response: Automated actions are triggered based on the risk score (e.g., suspend account if score is critical).',
+      'Step 6 – Reporting: Detailed reports on user risk and compliance are generated.',
+    ],
+    dailyLifeExample: 'Securonix is like a bank security system that doesn\'t just check if your key works, but also checks if you are acting strangely. If you usually withdraw $100 but suddenly try to withdraw $1 million at 3 AM, the system flags the unusual behavior (UEBA) even if your key (password) is correct.',
+    icon: Shield,
+    iconColor: 'text-purple-600',
+  },
+];
+
 // --- EDR Tools ---
 const edrTools: ToolDetail[] = [
   {
@@ -238,7 +424,7 @@ const edrTools: ToolDetail[] = [
 
 // --- Main Tool Categories Structure ---
 export const socToolCategories: ToolCategory[] = [
-  { title: 'SIEM Tools', icon: Brain, description: 'Security Information and Event Management platforms for centralized log analysis and alerting.', color: 'text-cyan-400', details: [] },
+  { title: 'SIEM Tools', icon: Brain, description: 'Security Information and Event Management platforms for centralized log analysis and alerting.', color: 'text-cyan-400', details: siemTools },
   { title: 'SOAR Tools', icon: Settings, description: 'Security Orchestration, Automation, and Response platforms for automating incident handling.', color: 'text-indigo-400', details: [] },
   { title: 'EDR Tools', icon: Shield, description: 'Endpoint Detection and Response solutions for monitoring and responding to threats on endpoints.', color: 'text-green-400', details: edrTools },
   { title: 'IDS / IPS Tools', icon: AlertTriangle, description: 'Intrusion Detection and Prevention Systems for monitoring network traffic for malicious activity.', color: 'text-red-400', details: [] },
