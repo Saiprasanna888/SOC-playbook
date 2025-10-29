@@ -39,7 +39,7 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                 {tool.name}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-6">
               
               {/* Purpose */}
               <div>
@@ -62,14 +62,37 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                   ))}
                 </ul>
               </div>
+              
+              {/* Usage in SOC */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                  <Users className="w-3 h-3 mr-1" /> Usage in SOC
+                </h4>
+                <p className="text-sm text-foreground/90 italic">{tool.usage}</p>
+              </div>
 
-              {/* Conceptual Workflow (NEW SECTION) */}
+              {/* Architecture */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                  <TerminalSquare className="w-3 h-3 mr-1" /> Architecture
+                </h4>
+                <ul className="list-none space-y-1 text-sm text-foreground/80 pl-0">
+                  {tool.architecture.map((arch, i) => (
+                    <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                      <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">•</span>
+                      <span className="flex-1">{arch}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Conceptual Workflow */}
               <div>
                 <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
                   <BookOpen className="w-3 h-3 mr-1" /> Conceptual SOC Workflow
                 </h4>
                 <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
-                  {tool.conceptualWorkflow.map((step, i) => (
+                  {tool.workflow.map((step, i) => (
                     <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
                       <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">{i + 1}.</span>
                       <span className="flex-1">{step}</span>
@@ -90,14 +113,6 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                     </Badge>
                   ))}
                 </div>
-              </div>
-
-              {/* Usage in SOC */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                  <Users className="w-3 h-3 mr-1" /> Usage in SOC
-                </h4>
-                <p className="text-sm text-foreground/90 italic">{tool.usageInSOC}</p>
               </div>
             </CardContent>
           </Card>
