@@ -77,7 +77,10 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
           <Card 
             key={index} 
             id={slugify(tool.name)} // Add ID for anchoring
-            className="border-l-4 border-primary/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
+            className={cn(
+              "border-l-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01]",
+              tool.iconColor.replace('text-', 'border-') // Use the tool's icon color for the border
+            )}
           >
             <CardHeader className="bg-muted/20 border-b border-border/50 p-4">
               <CardTitle className="text-xl font-bold flex items-center">
