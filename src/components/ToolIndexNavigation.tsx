@@ -25,8 +25,8 @@ const ToolIndexNavigation: React.FC<ToolIndexNavigationProps> = ({ tools }) => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Set active ID when an element enters the viewport from the top
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
+            // Set active ID when at least 20% of the element is visible from the top
             setActiveId(entry.target.id);
           }
         });
@@ -34,7 +34,7 @@ const ToolIndexNavigation: React.FC<ToolIndexNavigationProps> = ({ tools }) => {
       {
         root: scrollContainerRef.current,
         rootMargin: '0px 0px -80% 0px', // Trigger when 20% of the element is visible from the top
-        threshold: 0,
+        threshold: [0, 0.2, 0.5, 0.8, 1.0], // Check multiple thresholds
       }
     );
 
@@ -69,6 +69,10 @@ const ToolIndexNavigation: React.FC<ToolIndexNavigationProps> = ({ tools }) => {
 
   return (
     <div className="sticky top-0 pt-4 pr-4">
+      {/* TEMPORARY VISIBLE INDICATOR */}
+      <div className="text-red-500 bg-yellow-900 p-1 mb-2 text-xs font-bold">Sidebar Loaded</div>
+      {/* END TEMPORARY INDICATOR */}
+      
       <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center uppercase tracking-wider">
         <List className="w-3 h-3 mr-2" /> Tool Index
       </h3>

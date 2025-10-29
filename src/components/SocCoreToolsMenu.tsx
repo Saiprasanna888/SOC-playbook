@@ -32,7 +32,7 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
       <Separator />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Column: Sticky Navigation */}
+        {/* Left Column: Sticky Navigation (Visible on large screens) */}
         <div className="lg:col-span-1 hidden lg:block">
           <ToolIndexNavigation tools={category.details} />
         </div>
