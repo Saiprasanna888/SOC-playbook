@@ -7,7 +7,6 @@ import { cn, slugify } from '@/lib/utils';
 import { socToolCategories, ToolCategory, ToolDetail } from '@/data/socTools';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import ToolIndexNavigation from './ToolIndexNavigation';
 
 // --- Sub-Component for Tool Details ---
 interface ToolDetailsViewProps {
@@ -16,6 +15,22 @@ interface ToolDetailsViewProps {
 }
 
 const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) => {
+  
+  const scrollToId = (id: string) => {
+    const element = document.getElementById(id) as HTMLElement | null;
+    const container = document.querySelector('.soc-tools-dialog-content') as HTMLElement | null;
+
+    if (element && container) {
+      // Calculate the position relative to the container's current scroll position
+      const targetScrollTop = element.offsetTop - container.offsetTop;
+      
+      container.scrollTo({
+        top: targetScrollTop - 20, // Small offset for padding
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Button variant="ghost" onClick={onBack} className="p-0 h-auto text-primary hover:text-primary/80">
@@ -31,113 +46,131 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
       
       <Separator />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Column: Sticky Navigation (Visible on large screens) */}
-        <div className="lg:col-span-1 hidden lg:block">
-          <ToolIndexNavigation tools={category.details} />
+      {/* Horizontal Index Bar */}
+      <div className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm border-b border-border/50 py-3 -mx-6 px-6">
+        <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
+          {category.details.map((tool) => {
+            const id = slugify(tool.name);
+            return (
+              <a
+                key={id}
+                href={`#${id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToId(id);
+                }}
+                className={cn(
+                  "flex-shrink-0 text-sm font-medium py-1 px-3 rounded-full transition-colors duration-200",
+                  "bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                )}
+              >
+                {tool.name}
+              </a>
+            );
+          })}
         </div>
+      </div>
+      
+      {/* Tool Details List */}
+      <div className="space-y-8 pt-4">
+        {category.details.map((tool, index) => (
+          <Card 
+            key={index} 
+            id={slugify(tool.name)} // Add ID for anchoring
+            className="border-l-4 border-primary/50 shadow-lg hover:shadow-xl transition-shadow duration-300"
+          >
+            <CardHeader className="bg-muted/20 border-b border-border/50 p-4">
+              <CardTitle className="text-xl font-bold flex items-center">
+                <tool.icon className={cn("w-5 h-5 mr-3", tool.iconColor)} />
+                {tool.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              
+              {/* Purpose */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                  <List className="w-3 h-3 mr-1" /> Purpose
+                </h4>
+                <p className="text-sm text-foreground/90">{tool.purpose}</p>
+              </div>
 
-        {/* Right Column: Tool Details */}
-        <div className="lg:col-span-3 space-y-8">
-          {category.details.map((tool, index) => (
-            <Card 
-              key={index} 
-              id={slugify(tool.name)} // Add ID for anchoring
-              className="border-l-4 border-primary/50 shadow-lg hover:shadow-xl transition-shadow duration-300"
-            >
-              <CardHeader className="bg-muted/20 border-b border-border/50 p-4">
-                <CardTitle className="text-xl font-bold flex items-center">
-                  <tool.icon className={cn("w-5 h-5 mr-3", tool.iconColor)} />
-                  {tool.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                
-                {/* Purpose */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                    <List className="w-3 h-3 mr-1" /> Purpose
-                  </h4>
-                  <p className="text-sm text-foreground/90">{tool.purpose}</p>
-                </div>
+              {/* Daily Life Example */}
+              <div className="p-4 border border-dashed border-accent rounded-lg bg-background/50">
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center text-primary">
+                  <Home className="w-3 h-3 mr-1" /> Daily Life Example
+                </h4>
+                <p className="text-sm text-foreground/90 italic">{tool.dailyLifeExample}</p>
+              </div>
 
-                {/* Daily Life Example */}
-                <div className="p-4 border border-dashed border-accent rounded-lg bg-background/50">
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center text-primary">
-                    <Home className="w-3 h-3 mr-1" /> Daily Life Example
-                  </h4>
-                  <p className="text-sm text-foreground/90 italic">{tool.dailyLifeExample}</p>
-                </div>
-
-                {/* Key Features */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+              {/* Key Features */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
                     <CheckCircle className="w-3 h-3 mr-1" /> Key Features
-                  </h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-foreground/80 pl-4">
-                    {tool.keyFeatures.map((feature, i) => (
-                      <li key={i} className="flex items-start before:content-['•'] before:text-primary before:mr-2">
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                {/* Usage in SOC */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                    <Users className="w-3 h-3 mr-1" /> Usage in SOC
-                  </h4>
-                  <p className="text-sm text-foreground/90 italic">{tool.usage}</p>
-                </div>
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-foreground/80 pl-4">
+                  {tool.keyFeatures.map((feature, i) => (
+                    <li key={i} className="flex items-start before:content-['•'] before:text-primary before:mr-2">
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* Usage in SOC */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                  <Users className="w-3 h-3 mr-1" /> Usage in SOC
+                </h4>
+                <p className="text-sm text-foreground/90 italic">{tool.usage}</p>
+              </div>
 
-                {/* Architecture */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                    <TerminalSquare className="w-3 h-3 mr-1" /> Architecture
-                  </h4>
-                  <ul className="list-none space-y-1 text-sm text-foreground/80 pl-0">
-                    {tool.architecture.map((arch, i) => (
-                      <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
-                        <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">•</span>
-                        <span className="flex-1">{arch}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {/* Architecture */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                  <TerminalSquare className="w-3 h-3 mr-1" /> Architecture
+                </h4>
+                <ul className="list-none space-y-1 text-sm text-foreground/80 pl-0">
+                  {tool.architecture.map((arch, i) => (
+                    <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                      <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">•</span>
+                      <span className="flex-1">{arch}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                {/* Conceptual Workflow */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                    <BookOpen className="w-3 h-3 mr-1" /> Conceptual SOC Workflow
-                  </h4>
-                  <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
-                    {tool.workflow.map((step, i) => (
-                      <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
-                        <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">{i + 1}.</span>
-                        <span className="flex-1">{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+              {/* Conceptual Workflow */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                  <BookOpen className="w-3 h-3 mr-1" /> Conceptual SOC Workflow
+                </h4>
+                <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
+                  {tool.workflow.map((step, i) => (
+                    <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                      <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">{i + 1}.</span>
+                      <span className="flex-1">{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
 
-                {/* Advantages */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                    <Lightbulb className="w-3 h-3 mr-1" /> Advantages
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {tool.advantages.map((advantage, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs bg-accent/50 border border-primary/30">
-                        {advantage}
-                      </Badge>
-                    ))}
-                  </div>
+              {/* Advantages */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                  <Lightbulb className="w-3 h-3 mr-1" /> Advantages
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {tool.advantages.map((advantage, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs bg-accent/50 border border-primary/30">
+                      {advantage}
+                    </Badge>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
