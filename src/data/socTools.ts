@@ -392,11 +392,11 @@ const soarTools: ToolDetail[] = [
   },
   {
     name: 'Tines Automation Platform',
-    purpose: 'Tines is a no-code SOAR platform that allows SOC teams to build powerful automation workflows without scripting knowledge.',
+    purpose: 'Tines is a no-code SOAR platform that allows SOC teams to build powerful automation workflows, known as "Stories," without scripting knowledge. A Story is a sequence of actions (like fetching data, checking conditions, or blocking an IP) connected visually to automate complex security tasks.',
     keyFeatures: [
-      'No-code story builder for automation',
+      'No-code Story builder for automation',
       'Integration with 100+ APIs and services',
-      'Trigger-based workflows',
+      'Trigger-based workflows (Stories)',
       'Real-time collaboration and alerting',
       'Cloud-hosted or on-premise deployment',
     ],
@@ -409,7 +409,7 @@ const soarTools: ToolDetail[] = [
     usage: 'Used by SOC teams for automating phishing triage, alert enrichment, and ticketing without coding complexity.',
     architecture: [
       'Data Sources: Alerts and data from various security and IT systems.',
-      'Tines Stories: The visual, no-code automation workflows (playbooks).',
+      'Tines Stories: The visual, no-code automation workflows (playbooks) composed of connected Actions.',
       'API Integrations: Connectors to external services (e.g., ticketing, email, EDR).',
       'Response Actions: Automated steps executed by the stories.',
       'Dashboards: Provides visibility into automation performance.',
