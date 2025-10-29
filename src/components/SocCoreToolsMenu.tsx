@@ -7,7 +7,7 @@ import { cn, slugify } from '@/lib/utils';
 import { socToolCategories, ToolCategory, ToolDetail } from '@/data/socTools';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 // --- Sub-Component for Tool Details ---
 interface ToolDetailsViewProps {
@@ -19,12 +19,12 @@ interface ToolDetailsViewProps {
 const ToolDetailCard: React.FC<{ tool: ToolDetail }> = ({ tool }) => {
   
   // Framer Motion variants for scroll-in animation
-  const scrollInVariants = {
+  const scrollInVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0, 0, 0.2, 1] } },
   };
 
-  const sectionVariants = {
+  const sectionVariants: Variants = {
     hidden: { opacity: 0, x: -10 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.4, delay: 0.1 } },
   };
