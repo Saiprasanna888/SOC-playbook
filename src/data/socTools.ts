@@ -206,6 +206,42 @@ const siemTools: ToolDetail[] = [
     icon: Shield,
     iconColor: 'text-purple-600',
   },
+  {
+    name: 'Wazuh',
+    purpose: 'Wazuh is an open-source security platform that provides unified SIEM, Endpoint Security (XDR), and compliance monitoring capabilities, often used for host-based intrusion detection (HIDS).',
+    keyFeatures: [
+      'Host-based Intrusion Detection (HIDS)',
+      'Log Data Analysis and correlation',
+      'File Integrity Monitoring (FIM)',
+      'Vulnerability Detection and Configuration Assessment',
+      'Active Response capabilities (automated actions)',
+    ],
+    advantages: [
+      'Open-source and free to use',
+      'Strong focus on host-level security and compliance (PCI DSS, HIPAA)',
+      'Integrated FIM and vulnerability scanning',
+      'Highly customizable ruleset (Decoders and Rules)',
+    ],
+    usage: 'Used by SOCs for continuous monitoring of endpoints, servers, and cloud workloads, focusing on compliance and internal threat detection.',
+    architecture: [
+      'Wazuh Agent: Installed on endpoints, collects logs, FIM data, and system calls.',
+      'Wazuh Manager: Central server that analyzes, correlates, and stores data from agents.',
+      'Elastic Stack (Optional): Used for indexing, searching, and visualization (Kibana dashboard).',
+      'Rules Engine: Processes events against a comprehensive set of security rules to generate alerts.',
+      'Active Response: Executes automated actions (e.g., blocking an IP) based on high-severity alerts.',
+    ],
+    workflow: [
+      'Step 1 – Data Collection: Agents collect logs, file changes, and configuration data from endpoints.',
+      'Step 2 – Analysis & Correlation: The Manager analyzes the data, normalizes it, and correlates events using its rules engine.',
+      'Step 3 – Alert Generation: A match (e.g., unauthorized file modification) triggers a high-severity alert.',
+      'Step 4 – Active Response: If configured, the Manager sends a command back to the agent to perform an immediate action (e.g., block the source IP).',
+      'Step 5 – Investigation: Analysts use the Kibana dashboard to review the alert details, FIM history, and vulnerability status of the host.',
+      'Step 6 – Compliance Reporting: Reports are generated based on configuration and vulnerability scans.',
+    ],
+    dailyLifeExample: 'Wazuh is like a highly vigilant security guard inside every room (endpoint). It not only records who enters (logs) but also checks if anyone touches the safe (FIM) or leaves a window open (vulnerability scan), and can instantly lock the door (Active Response) if it detects a threat.',
+    icon: BookOpen,
+    iconColor: 'text-green-700',
+  },
 ];
 
 // --- EDR Tools ---
