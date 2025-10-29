@@ -31,6 +31,13 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
     }
   };
 
+  // Helper to map Tailwind color classes to custom glow classes
+  const getGlowClass = (colorClass: string) => {
+    // Example: 'text-orange-600' -> 'hover:shadow-orange-600/50'
+    const color = colorClass.replace('text-', '');
+    return `hover:shadow-lg hover:shadow-${color}/50 hover:border-${color}`;
+  };
+
   return (
     <div className="space-y-6">
       <Button variant="ghost" onClick={onBack} className="p-0 h-auto text-primary hover:text-primary/80">
@@ -73,107 +80,111 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
       
       {/* Tool Details List */}
       <div className="space-y-8 pt-4">
-        {category.details.map((tool, index) => (
-          <Card 
-            key={index} 
-            id={slugify(tool.name)} // Add ID for anchoring
-            className={cn(
-              "border-l-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01]",
-              tool.iconColor.replace('text-', 'border-') // Use the tool's icon color for the border
-            )}
-          >
-            <CardHeader className="bg-muted/20 border-b border-border/50 p-4">
-              <CardTitle className="text-xl font-bold flex items-center">
-                <tool.icon className={cn("w-5 h-5 mr-3", tool.iconColor)} />
-                {tool.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              
-              {/* Purpose */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                  <List className="w-3 h-3 mr-1" /> Purpose
-                </h4>
-                <p className="text-sm text-foreground/90">{tool.purpose}</p>
-              </div>
-
-              {/* Daily Life Example */}
-              <div className="p-4 border border-dashed border-accent rounded-lg bg-background/50">
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center text-primary">
-                  <Home className="w-3 h-3 mr-1" /> Daily Life Example
-                </h4>
-                <p className="text-sm text-foreground/90 italic">{tool.dailyLifeExample}</p>
-              </div>
-
-              {/* Key Features */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                    <CheckCircle className="w-3 h-3 mr-1" /> Key Features
-                </h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-foreground/80 pl-4">
-                  {tool.keyFeatures.map((feature, i) => (
-                    <li key={i} className="flex items-start before:content-['•'] before:text-primary before:mr-2">
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              {/* Usage in SOC */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                  <Users className="w-3 h-3 mr-1" /> Usage in SOC
-                </h4>
-                <p className="text-sm text-foreground/90 italic">{tool.usage}</p>
-              </div>
-
-              {/* Architecture */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                  <TerminalSquare className="w-3 h-3 mr-1" /> Architecture
-                </h4>
-                <ul className="list-none space-y-1 text-sm text-foreground/80 pl-0">
-                  {tool.architecture.map((arch, i) => (
-                    <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
-                      <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">•</span>
-                      <span className="flex-1">{arch}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Conceptual Workflow */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                  <BookOpen className="w-3 h-3 mr-1" /> Conceptual SOC Workflow
-                </h4>
-                <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
-                  {tool.workflow.map((step, i) => (
-                    <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
-                      <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">{i + 1}.</span>
-                      <span className="flex-1">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              {/* Advantages */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
-                  <Lightbulb className="w-3 h-3 mr-1" /> Advantages
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {tool.advantages.map((advantage, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs bg-accent/50 border border-primary/30">
-                      {advantage}
-                    </Badge>
-                  ))}
+        {category.details.map((tool, index) => {
+          const glowClass = getGlowClass(tool.iconColor);
+          return (
+            <Card 
+              key={index} 
+              id={slugify(tool.name)} // Add ID for anchoring
+              className={cn(
+                "border-l-4 shadow-lg transition-all duration-300 hover:scale-[1.01] hover:border-l-8",
+                tool.iconColor.replace('text-', 'border-'), // Base border color
+                glowClass // Custom glow effect
+              )}
+            >
+              <CardHeader className="bg-muted/20 border-b border-border/50 p-4">
+                <CardTitle className="text-xl font-bold flex items-center">
+                  <tool.icon className={cn("w-5 h-5 mr-3", tool.iconColor)} />
+                  {tool.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                
+                {/* Purpose */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                    <List className="w-3 h-3 mr-1" /> Purpose
+                  </h4>
+                  <p className="text-sm text-foreground/90">{tool.purpose}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+
+                {/* Daily Life Example */}
+                <div className="p-4 border border-dashed border-accent rounded-lg bg-background/50">
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center text-primary">
+                    <Home className="w-3 h-3 mr-1" /> Daily Life Example
+                  </h4>
+                  <p className="text-sm text-foreground/90 italic">{tool.dailyLifeExample}</p>
+                </div>
+
+                {/* Key Features */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                      <CheckCircle className="w-3 h-3 mr-1" /> Key Features
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-foreground/80 pl-4">
+                    {tool.keyFeatures.map((feature, i) => (
+                      <li key={i} className="flex items-start before:content-['•'] before:text-primary before:mr-2">
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {/* Usage in SOC */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                    <Users className="w-3 h-3 mr-1" /> Usage in SOC
+                  </h4>
+                  <p className="text-sm text-foreground/90 italic">{tool.usage}</p>
+                </div>
+
+                {/* Architecture */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                    <TerminalSquare className="w-3 h-3 mr-1" /> Architecture
+                  </h4>
+                  <ul className="list-none space-y-1 text-sm text-foreground/80 pl-0">
+                    {tool.architecture.map((arch, i) => (
+                      <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                        <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">•</span>
+                        <span className="flex-1">{arch}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Conceptual Workflow */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                    <BookOpen className="w-3 h-3 mr-1" /> Conceptual SOC Workflow
+                  </h4>
+                  <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
+                    {tool.workflow.map((step, i) => (
+                      <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                        <span className="text-primary mr-2 font-extrabold text-xs mt-0.5">{i + 1}.</span>
+                        <span className="flex-1">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Advantages */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center">
+                    <Lightbulb className="w-3 h-3 mr-1" /> Advantages
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {tool.advantages.map((advantage, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs bg-accent/50 border border-primary/30">
+                        {advantage}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
