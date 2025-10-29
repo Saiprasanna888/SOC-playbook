@@ -166,13 +166,18 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                   </h4>
                   <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
                     {tool.workflow.map((step, i) => {
-                      const [title, ...rest] = step.split('–');
+                      // 1. Remove "Step X – " prefix if present
+                      const content = step.replace(/^Step \d+ – /, '').trim(); 
+                      
+                      // 2. Split by the first colon to separate the main step title from details
+                      const [stepTitle, ...stepDetails] = content.split(':');
+
                       return (
                         <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
                           <span className="text-primary mr-2 font-extrabold text-xs mt-0.5 font-bold">{i + 1}.</span>
                           <span className="flex-1">
-                            <span className="font-bold">{title}</span>
-                            {rest.join('–')}
+                            <span className="font-bold">{stepTitle}:</span>
+                            {stepDetails.join(':')}
                           </span>
                         </li>
                       );
