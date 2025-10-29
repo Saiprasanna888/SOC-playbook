@@ -144,12 +144,18 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                     <TerminalSquare className="w-3 h-3 mr-1" /> Architecture
                   </h4>
                   <ul className="list-none space-y-1 text-sm text-foreground/80 pl-0">
-                    {tool.architecture.map((arch, i) => (
-                      <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
-                        <span className="text-primary mr-2 font-extrabold text-xs mt-0.5 font-bold">{i + 1}.</span>
-                        <span className="flex-1">{arch}</span>
-                      </li>
-                    ))}
+                    {tool.architecture.map((arch, i) => {
+                      const [title, ...rest] = arch.split(':');
+                      return (
+                        <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                          <span className="text-primary mr-2 font-extrabold text-xs mt-0.5 font-bold">{i + 1}.</span>
+                          <span className="flex-1">
+                            <span className="font-bold">{title}:</span>
+                            {rest.join(':')}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
 
@@ -159,12 +165,18 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                     <BookOpen className="w-3 h-3 mr-1" /> Conceptual SOC Workflow
                   </h4>
                   <ol className="list-none space-y-2 text-sm text-foreground/90 pl-0">
-                    {tool.workflow.map((step, i) => (
-                      <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
-                        <span className="text-primary mr-2 font-extrabold text-xs mt-0.5 font-bold">{i + 1}.</span>
-                        <span className="flex-1">{step}</span>
-                      </li>
-                    ))}
+                    {tool.workflow.map((step, i) => {
+                      const [title, ...rest] = step.split('–');
+                      return (
+                        <li key={i} className="flex items-start border-l-2 border-accent/50 pl-3 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1">
+                          <span className="text-primary mr-2 font-extrabold text-xs mt-0.5 font-bold">{i + 1}.</span>
+                          <span className="flex-1">
+                            <span className="font-bold">{title}</span>
+                            {rest.join('–')}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ol>
                 </div>
 
