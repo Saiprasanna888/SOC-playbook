@@ -8,6 +8,7 @@ import { Filter, ChevronRight, Zap, Terminal, Wrench, User, BookOpen, ShieldAler
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import MobileFilter from './MobileFilter';
+import SocCoreToolsMenu from './SocCoreToolsMenu'; // Import the new component
 
 interface AlertListProps {
   searchTerm: string;
@@ -88,16 +89,21 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      {/* Mobile Filter Button (Visible on small screens) */}
-      <div className="lg:hidden mb-4">
-        <MobileFilter 
-          categories={allCategories}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
-          severityOptions={severityOptions}
-          activeSeverity={activeSeverity}
-          setActiveSeverity={setActiveSeverity}
-        />
+      {/* Mobile Filter and Tools Button (Visible on small screens) */}
+      <div className="lg:hidden mb-4 col-span-full flex space-x-2">
+        <div className="flex-1">
+          <MobileFilter 
+            categories={allCategories}
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
+            severityOptions={severityOptions}
+            activeSeverity={activeSeverity}
+            setActiveSeverity={setActiveSeverity}
+          />
+        </div>
+        <div className="flex-1">
+          <SocCoreToolsMenu />
+        </div>
       </div>
 
       {/* Sidebar for Filters (Hidden on small screens) */}
@@ -157,6 +163,11 @@ const AlertList: React.FC<AlertListProps> = ({ searchTerm }) => {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Desktop Tools Button */}
+        <div className="mt-8">
+          <SocCoreToolsMenu />
+        </div>
       </div>
 
       {/* Alert Results (Takes full width on mobile, 3/4 on desktop) */}
