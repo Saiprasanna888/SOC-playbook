@@ -221,6 +221,7 @@ const siemTools: ToolDetail[] = [
       'Strong focus on host-level security and compliance (PCI DSS, HIPAA)',
       'Integrated FIM and vulnerability scanning',
       'Highly customizable ruleset (Decoders and Rules)',
+      'Integrated with Elastic Stack for visualization',
     ],
     usage: 'Used by SOCs for continuous monitoring of endpoints, servers, and cloud workloads, focusing on compliance and internal threat detection.',
     architecture: [
@@ -1144,6 +1145,174 @@ const networkModels: ToolDetail[] = [
   },
 ];
 
+// --- Frameworks & Standards ---
+const frameworkTools: ToolDetail[] = [
+  {
+    name: 'MITRE ATT&CK Framework',
+    purpose: 'The MITRE ATT&CK Framework is a global knowledge base of adversary tactics and techniques based on real-world observations. It helps security teams structure threat intelligence and improve detection coverage.',
+    keyFeatures: [
+      'Tactics: The "why" (e.g., Initial Access, Persistence, Exfiltration).',
+      'Techniques: The "how" (e.g., Phishing, Exploiting Public-Facing Application).',
+      'Sub-Techniques: Specific methods used to execute a technique.',
+      'Matrices: Organized views for Enterprise, Mobile, and ICS environments.',
+    ],
+    advantages: [
+      'Standardizes threat intelligence communication.',
+      'Helps identify gaps in security monitoring (detection coverage).',
+      'Provides a common language for red and blue teams.',
+      'Crucial for threat hunting and adversary emulation.',
+    ],
+    usage: 'Used by SOC analysts to map alerts to specific techniques, prioritize defensive efforts, and perform structured threat hunting exercises.',
+    architecture: [
+      'Tactics: The highest-level categories representing the attacker\'s objective.',
+      'Techniques: The specific actions an adversary takes to achieve a tactic.',
+      'Data Sources: Logs and telemetry required to detect a technique (e.g., Process Monitoring, Network Flow).',
+      'Mitigations: Recommended security controls to prevent or limit the technique.',
+    ],
+    workflow: [
+      'Step 1 – Alert Mapping: An alert (e.g., PowerShell execution) is mapped to a MITRE Technique (e.g., T1059.001 - PowerShell).',
+      'Step 2 – Contextualization: The analyst uses the framework to understand the attacker\'s likely next steps (Tactic: Execution).',
+      'Step 3 – Hunting: The analyst proactively searches for other techniques in the same Tactic across the environment.',
+      'Step 4 – Reporting: The incident report uses MITRE terminology to communicate the threat clearly to management and other teams.',
+    ],
+    dailyLifeExample: 'Imagine a guidebook showing all ways burglars can enter a house (Tactics) and the specific tools they use (Techniques). Knowing this, you can strengthen doors, locks, and cameras — the same way SOC teams strengthen their systems using MITRE ATT&CK.',
+    icon: Zap,
+    iconColor: 'text-red-500',
+  },
+  {
+    name: 'NIST Cybersecurity Framework (CSF)',
+    purpose: 'The NIST CSF provides a simple, risk-based structure for managing and reducing cybersecurity risks across an organization. It is widely adopted for governance and risk management.',
+    keyFeatures: [
+      'Core Functions: Identify, Protect, Detect, Respond, Recover.',
+      'Implementation Tiers: Levels of cybersecurity maturity (Partial, Risk Informed, Repeatable, Adaptive).',
+      'Profiles: Customized plans that align the Framework Core with an organization’s specific business needs.',
+      'Compliance Alignment: Easily maps to other standards like ISO 27001 and HIPAA.',
+    ],
+    advantages: [
+      'Provides a flexible, non-prescriptive approach to risk management.',
+      'Facilitates communication between technical and executive teams.',
+      'Helps prioritize security investments based on risk.',
+      'Improves incident response readiness across the entire lifecycle.',
+    ],
+    usage: 'Used by SOC management to define the scope of security operations, measure maturity, and ensure all aspects of the incident lifecycle are covered.',
+    architecture: [
+      'Identify: Asset Management, Governance, Risk Assessment.',
+      'Protect: Access Control, Data Security, Maintenance.',
+      'Detect: Anomalies and Events, Continuous Monitoring.',
+      'Respond: Response Planning, Mitigation, Communications.',
+      'Recover: Recovery Planning, Improvements, Communications.',
+    ],
+    workflow: [
+      'Step 1 – Identify: The SOC team ensures all critical assets are logged and monitored.',
+      'Step 2 – Protect: The SOC verifies that protective controls (Firewalls, EDR) are functioning correctly.',
+      'Step 3 – Detect: The SIEM generates an alert based on continuous monitoring.',
+      'Step 4 – Respond: The SOC executes the containment and eradication playbooks.',
+      'Step 5 – Recover: The SOC assists IT in restoring affected systems and documents lessons learned for future improvements.',
+    ],
+    dailyLifeExample: 'It’s like home security: you identify valuables (Identify), lock doors (Protect), install alarms (Detect), call police during a break-in (Respond), and fix doors after (Recover).',
+    icon: BookOpen,
+    iconColor: 'text-green-600',
+  },
+  {
+    name: 'OWASP Top 10 (Web Application Security)',
+    purpose: 'The OWASP Top 10 lists the most common and dangerous web application vulnerabilities. It guides developers and security teams to prevent these risks early in the development cycle.',
+    keyFeatures: [
+      'A01: Broken Access Control – Unauthorized access to data or actions.',
+      'A03: Injection – Untrusted data executed as commands (SQL, Command Injection).',
+      'A04: Insecure Design – Flaws that expose systems by poor planning (e.g., no rate limiting).',
+      'A05: Security Misconfiguration – Leaving default admin credentials active or unnecessary services exposed.',
+      'A09: Security Logging & Monitoring Failures – Missing detection systems or insufficient audit trails.',
+    ],
+    advantages: [
+      'Provides a prioritized list of critical application risks.',
+      'Essential for application security testing (SAST/DAST).',
+      'Helps WAF/IPS teams configure rules to block common web attacks.',
+      'Easy to communicate application risk to non-technical stakeholders.',
+    ],
+    usage: 'SOC analysts monitor WAF and application logs to detect real-time exploitation attempts corresponding to these vulnerabilities (e.g., SQL injection attempts).',
+    architecture: [
+      'WAF/IPS: Deployed to block A01, A03, A10 attacks in real time.',
+      'Application Logging: Must capture sufficient detail to detect A09 failures.',
+      'Code Review: Used to prevent A04 and A06 flaws before deployment.',
+    ],
+    workflow: [
+      'Step 1 – Detection: WAF generates an alert for an A03 (Injection) attempt.',
+      'Step 2 – Triage: SOC analyst confirms the payload and source IP.',
+      'Step 3 – Containment: The source IP is blocked at the firewall/WAF.',
+      'Step 4 – Remediation: The alert is escalated to the development team with the specific vulnerability details for patching.',
+    ],
+    dailyLifeExample: 'Like a list of the top 10 common mistakes homeowners make (leaving the spare key under the mat, forgetting to lock the window) — OWASP helps web developers avoid leaving "doors and windows" open for hackers.',
+    icon: Terminal,
+    iconColor: 'text-orange-500',
+  },
+  {
+    name: 'CIS Critical Security Controls (CIS Controls)',
+    purpose: 'The CIS Controls are a prioritized set of 18 actions that form a foundation for effective cyber defense. They are highly prescriptive and focus on technical implementation to block known attacks.',
+    keyFeatures: [
+      'Prioritized Implementation: Focuses on the 20% of actions that yield 80% of the security benefit.',
+      'Implementation Groups (IGs): Categorizes controls based on organizational size and risk (IG1, IG2, IG3).',
+      'Control 1: Inventory and Control of Enterprise Assets (Crucial for SOC visibility).',
+      'Control 3: Data Protection (Crucial for DLP and Insider Threat).',
+      'Control 8: Management of Service Providers (Supply Chain Risk).',
+    ],
+    advantages: [
+      'Highly actionable and easy to implement technically.',
+      'Strong focus on foundational hygiene (asset inventory, configuration).',
+      'Proven effectiveness against common attack vectors.',
+      'Excellent for measuring and reporting security posture improvement.',
+    ],
+    usage: 'SOC teams use CIS Controls to ensure the foundational data sources (asset inventory, configuration logs) are available and accurate for detection and response.',
+    architecture: [
+      'Asset Inventory: Required for Controls 1 & 2 (Hardware/Software).',
+      'Secure Configuration: Required for Control 4 (Hardening systems).',
+      'Audit Log Management: Required for Control 8 (Ensuring logs are collected).',
+      'Vulnerability Management: Required for Control 7 (Patching systems).',
+    ],
+    workflow: [
+      'Step 1 – Violation Detection: An EDR alert detects an unauthorized administrative tool (violating Control 4).',
+      'Step 2 – Triage: Analyst confirms the tool is unapproved and isolates the host.',
+      'Step 3 – Remediation: The host is re-imaged, and the security engineering team updates the application whitelisting policy (Control 2).',
+      'Step 4 – Reporting: The incident is logged as a CIS Control 4 violation, driving policy enforcement improvements.',
+    ],
+    dailyLifeExample: 'CIS Controls are like a checklist of the most important, non-negotiable safety features for a car: working brakes, airbags, and seatbelts. If you implement these 18 things, you are protected against 90% of common accidents (attacks).',
+    icon: Shield,
+    iconColor: 'text-blue-600',
+  },
+  {
+    name: 'Lockheed Martin Cyber Kill Chain',
+    purpose: 'The Cyber Kill Chain is a model that describes the stages of a cyber attack, from initial reconnaissance to the final objective. It helps SOC analysts understand the attack progression and identify key points where the attack can be interrupted ("killed").',
+    keyFeatures: [
+      '7 Stages: Reconnaissance, Weaponization, Delivery, Exploitation, Installation, Command & Control (C2), Actions on Objectives.',
+      'Focus on Prevention: Emphasizes blocking the attack early in the chain (e.g., blocking delivery).',
+      'Adversary Tracking: Helps track the attacker\'s progress through the network.',
+    ],
+    advantages: [
+      'Provides a simple, linear view of complex attacks.',
+      'Excellent for defining defensive layers (e.g., email gateway blocks Delivery).',
+      'Helps prioritize alerts based on the stage of the attack (later stages are higher priority).',
+    ],
+    usage: 'Used by SOC analysts to classify incidents, determine the appropriate containment strategy based on the stage, and identify defensive gaps.',
+    architecture: [
+      'Reconnaissance: Attacker gathers information (Detected by Threat Intel).',
+      'Weaponization: Attacker pairs exploit with payload (Prevented by Sandbox).',
+      'Delivery: Attacker transmits the weapon (Blocked by Email Gateway/Firewall).',
+      'Exploitation: Attacker executes code (Blocked by EDR/IPS).',
+      'Installation: Attacker establishes persistence (Blocked by EDR/FIM).',
+      'C2: Attacker communicates with external server (Blocked by Firewall/Proxy).',
+      'Actions on Objectives: Attacker achieves goal (Detected by DLP/File Auditing).',
+    ],
+    workflow: [
+      'Step 1 – Alert: A C2 Communication alert is received (Stage 6).',
+      'Step 2 – Triage: Analyst immediately recognizes this is a late-stage attack and prioritizes containment.',
+      'Step 3 – Containment: The host is isolated to prevent Actions on Objectives (Stage 7).',
+      'Step 4 – Retrospective Analysis: The analyst searches logs backward to find the initial Delivery (Stage 3) and Exploitation (Stage 4) methods to close the gap.',
+    ],
+    dailyLifeExample: 'The Cyber Kill Chain is like tracking a missile launch: you can try to stop the planning (Recon), the assembly (Weaponization), the launch (Delivery), or the impact (Actions on Objectives). The earlier you stop it, the less damage occurs.',
+    icon: Flame,
+    iconColor: 'text-red-400',
+  },
+];
+
 // --- Main Tool Categories Structure ---
 export const socToolCategories: ToolCategory[] = [
   { title: 'SIEM Tools', icon: Brain, description: 'Security Information and Event Management platforms for centralized log analysis and alerting.', color: 'text-cyan-400', details: siemTools },
@@ -1152,5 +1321,5 @@ export const socToolCategories: ToolCategory[] = [
   { title: 'IDS / IPS Tools', icon: AlertTriangle, description: 'Intrusion Detection and Prevention Systems for monitoring network traffic for malicious activity.', color: 'text-red-400', details: idsIpsTools },
   { title: 'Firewalls', icon: Flame, description: 'Network security systems that monitor and control incoming and outgoing network traffic.', color: 'text-orange-400', details: firewallTools },
   { title: 'Network Models', icon: Globe, description: 'Conceptual models and frameworks used to understand network architecture and security zones.', color: 'text-blue-400', details: networkModels },
-  { title: 'Frameworks & Standards', icon: BookOpen, description: 'Industry standards and frameworks like MITRE ATT&CK, NIST, and CIS Controls.', color: 'text-yellow-400', details: [] },
+  { title: 'Frameworks & Standards', icon: BookOpen, description: 'Industry standards and frameworks like MITRE ATT&CK, NIST, and CIS Controls.', color: 'text-yellow-400', details: frameworkTools },
 ];
