@@ -1,5 +1,5 @@
 import React from 'react';
-import { TerminalSquare, Zap, Shield, AlertTriangle, Flame, Globe, BookOpen, X, Settings, Brain, ArrowLeft, CheckCircle, Lightbulb, Users, List, ChevronRight } from 'lucide-react';
+import { TerminalSquare, Zap, Shield, AlertTriangle, Flame, Globe, BookOpen, X, Settings, Brain, ArrowLeft, CheckCircle, Lightbulb, Users, List, ChevronRight, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +47,14 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
                   <List className="w-3 h-3 mr-1" /> Purpose
                 </h4>
                 <p className="text-sm text-foreground/90">{tool.purpose}</p>
+              </div>
+
+              {/* Daily Life Example (NEW SECTION) */}
+              <div className="p-4 border border-dashed border-accent rounded-lg bg-background/50">
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center text-primary">
+                  <Home className="w-3 h-3 mr-1" /> Daily Life Example
+                </h4>
+                <p className="text-sm text-foreground/90 italic">{tool.dailyLifeExample}</p>
               </div>
 
               {/* Key Features */}
