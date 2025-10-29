@@ -77,7 +77,7 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
           <Card 
             key={index} 
             id={slugify(tool.name)} // Add ID for anchoring
-            className="border-l-4 border-primary/50 shadow-lg hover:shadow-xl transition-shadow duration-300"
+            className="border-l-4 border-primary/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
           >
             <CardHeader className="bg-muted/20 border-b border-border/50 p-4">
               <CardTitle className="text-xl font-bold flex items-center">
@@ -222,7 +222,7 @@ const SocCoreToolsMenu: React.FC = () => {
                 key={category.title} 
                 className={cn(
                   "group transition-all duration-300 hover:shadow-primary/50 hover:shadow-lg border-border/50",
-                  category.details.length > 0 ? "cursor-pointer hover:border-primary/80" : "opacity-60 cursor-default"
+                  category.details.length > 0 ? "cursor-pointer hover:border-primary/80 hover:scale-[1.02]" : "opacity-60 cursor-default"
                 )}
                 onClick={() => handleCategoryClick(category)}
               >
