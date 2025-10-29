@@ -225,7 +225,7 @@ const SocCoreToolsMenu: React.FC = () => {
                 key={category.title} 
                 className={cn(
                   "group transition-all duration-300 hover:shadow-primary/50 hover:shadow-lg border-border/50",
-                  category.details.length > 0 ? "cursor-pointer hover:border-primary/80 hover:scale-[1.02]" : "opacity-60 cursor-default"
+                  category.details.length > 0 ? "cursor-pointer hover:border-primary/80 hover:scale-[1.02] hover:translate-y-[-2px]" : "opacity-60 cursor-default"
                 )}
                 onClick={() => handleCategoryClick(category)}
               >

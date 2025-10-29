@@ -68,7 +68,10 @@ const AlertDetail: React.FC = () => {
       </h3>
       <ol className="space-y-4 list-none pl-0 text-gray-700 dark:text-gray-300">
         {items.map((item, index) => (
-          <li key={index} className="flex items-start border-l-2 border-primary/50 pl-4 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1 hover:border-primary/80 hover:scale-[1.005]">
+          <li 
+            key={index} 
+            className="flex items-start border-l-2 border-primary/50 pl-4 transition-all duration-200 hover:bg-background/50 rounded-r-md py-1 hover:border-primary/80 hover:scale-[1.005] hover:shadow-sm" // Added hover:shadow-sm
+          >
             <span className="text-primary mr-3 font-extrabold text-lg">{index + 1}.</span>
             <span className="flex-1 text-base">{item}</span>
           </li>
