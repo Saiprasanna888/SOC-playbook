@@ -211,15 +211,15 @@ export const mockAlerts: AlertPlaybook[] = [
     category: 'Authentication & Access',
     description: 'A user account was added to a sensitive group (e.g., Domain Admins, Global Administrators) without proper change control.',
     causes: [
-      'Compromised administrator account making unauthorized changes.',
+      'Compromised administrator account used to create a backdoor account.',
       'Misconfigured automation or provisioning system.',
     ],
     actions: [
       'Step 1: **Identify Changer and Target.** Determine the user who made the change and the user who was added to the group.',
       'Step 2: **Verify Change Control.** Check the change management system for an approved ticket corresponding to this creation time.',
-      'Step 3: **Containment.** If unauthorized, immediately remove the user from the high-privilege group.',
+      'Step 3: **Containment.** If unauthorized, immediately disable the newly created administrative account.',
       'Step 4: **Investigate Changer.** If the creator account was compromised, suspend it and follow the Compromised Account playbook.',
-      'Step 5: **Audit Activity.** Review all activity of the newly privileged user since the change occurred.',
+      'Step 5: **Audit Permissions.** Review the permissions granted to the new account and ensure no other unauthorized changes were made to IAM policies.',
     ],
     queries: [
       { tool: 'AD/IAM Logs', query: 'EventID=4728 AND TargetGroupName="Domain Admins"' },
@@ -456,7 +456,7 @@ export const mockAlerts: AlertPlaybook[] = [
     ],
     actions: [
       'Step 1: **Identify User and Time.** Determine the user, source IP, and exact time of the login.',
-      'Step 2: **Contact User.** Contact the user out-of-band to verify the activity and location.',
+      'Step 2: **Contact User.** Contact the user out-of-band to verify if they initiated the login from that location.',
       'Step 3: **Audit Activity.** Review all activity performed during the session (e.g., file access, email activity).',
       'Step 4: **Containment (If Malicious).** If unauthorized, immediately suspend the account and force a password reset.',
       'Step 5: **Mitigation.** Implement conditional access policies to restrict access outside of normal hours for non-traveling users.',
@@ -629,7 +629,7 @@ export const mockAlerts: AlertPlaybook[] = [
       'Attacker bypassing traditional firewall rules.',
     ],
     actions: [
-      'Step 1: **Verify Alert.** Confirm the alert by checking the volume and rate of DNS queries from the source IP. Look for non-standard characters (high entropy) in the query names.',
+      'Step 1: **Verify the Alert.** Confirm the alert by checking the volume and rate of DNS queries from the source IP. Look for non-standard characters (high entropy) in the query names.',
       'Step 2: **Identify Source.** Determine the hostname and user associated with the source IP address.',
       'Step 3: **Containment.** Immediately isolate the source host from the network to stop data exfiltration.',
       'Step 4: **Perimeter Block.** Block the external destination DNS server IP and domain at the firewall and DNS filter.',
@@ -2070,7 +2070,7 @@ export const mockAlerts: AlertPlaybook[] = [
       'Step 1: **Identify User and Link.** Determine the user and the malicious URL.',
       'Step 2: **Check for Submission.** Immediately check proxy/network logs to see if the user submitted credentials to the site.',
       'Step 3: **Immediate Suspension.** If credentials were submitted, immediately suspend the user account.',
-      'Step 4: **Remediation.** Force a password reset for the user and all accounts sharing that password. Check for signs of compromise.',
+      'Step 4: **Remediation.** Force a password reset for the user and all accounts sharing that password. Check for signs of account compromise.',
       'Step 5: **User Training.** Provide mandatory, immediate security awareness training to the user.',
     ],
     queries: [
@@ -4119,6 +4119,74 @@ export const mockAlerts: AlertPlaybook[] = [
     tools: ['File Integrity Monitoring (FIM)', 'Forensic Toolkit', 'Legal Team'],
     escalation: 'High priority. Compromises the entire investigation chain.',
   },
+
+  // --- 10. SOC Frameworks & Core Security Tools Alerts (NEW CATEGORY) ---
+  {
+    id: 'mitre-tactic-hit',
+    name: 'MITRE ATT&CK Tactic Match (Initial Access)',
+    category: 'SOC Frameworks & Core Security Tools',
+    description: 'A sequence of events matched a high-confidence pattern associated with a specific MITRE ATT&CK Tactic (e.g., Initial Access or Persistence), indicating a structured attack phase.',
+    causes: [
+      'Attacker following a known TTP (Tactic, Technique, and Procedure).',
+      'Behavioral detection engine successfully correlating low-level events.',
+    ],
+    actions: [
+      'Step 1: **Identify Tactic and Technique.** Determine the specific MITRE Tactic and Technique identified (e.g., T1190 - Exploit Public-Facing Application).',
+      'Step 2: **Scope Assessment.** Review all associated events and hosts linked to the detection to understand the full scope of the attack phase.',
+      'Step 3: **Containment.** Isolate the initial host(s) involved in the detection chain.',
+      'Step 4: **Pivot to Technique Playbook.** Use the identified MITRE Technique to pivot to a more specific playbook (e.g., if T1003 Credential Dumping is detected, follow the Credential Dumping playbook).',
+      'Step 5: **Remediation.** Block the TTP across the environment by updating detection rules and compensating controls.',
+    ],
+    queries: [
+      { tool: 'SIEM/EDR', query: 'mitre_tactic="Initial Access" AND confidence > 0.9' },
+    ],
+    tools: ['MITRE ATT&CK Navigator', 'SIEM/EDR Behavioral Engine', 'Threat Intelligence'],
+    escalation: 'High priority. Indicates a sophisticated, multi-step attack is underway.',
+  },
+  {
+    id: 'nist-ir-phase-breach',
+    name: 'NIST IR Phase Breach (Containment Failure)',
+    category: 'SOC Frameworks & Core Security Tools',
+    description: 'An incident response process failed to contain a threat, leading to the incident escalating from the Containment phase to the Eradication/Recovery phase with increased scope.',
+    causes: [
+      'Containment measures were bypassed by the attacker (e.g., quarantine bypass).',
+      'Initial scope assessment was incorrect, allowing the threat to spread.',
+    ],
+    actions: [
+      'Step 1: **Re-evaluate Scope.** Immediately halt current actions and re-evaluate the full scope of the compromise (all affected hosts, accounts, and data).',
+      'Step 2: **Re-containment.** Apply stronger, manual containment measures (e.g., physical disconnect, global credential rotation).',
+      'Step 3: **Root Cause Analysis (Containment Failure).** Determine why the initial containment failed (e.g., SOAR failure, attacker resistance).',
+      'Step 4: **Engage Management.** Notify management of the escalation and the increased recovery timeline/cost.',
+      'Step 5: **Proceed to Eradication.** Focus efforts on eradicating the threat from all newly identified affected systems.',
+    ],
+    queries: [
+      { tool: 'IR Management System', query: 'incident_id="[ID]" AND phase_transition="Containment_to_Eradication" AND reason="Failure"' },
+    ],
+    tools: ['IR Management System', 'Executive Communication Tools'],
+    escalation: 'CRITICAL. Indicates a major incident that is out of control.',
+  },
+  {
+    id: 'cis-control-violation',
+    name: 'CIS Control Violation (Unauthorized Admin Tool)',
+    category: 'SOC Frameworks & Core Security Tools',
+    description: 'Detection of an unauthorized administrative tool (e.g., remote access software, unapproved vulnerability scanner) running on a critical asset, violating CIS Control 4 (Secure Configuration).',
+    causes: [
+      'Shadow IT deployment or unauthorized software installation.',
+      'Attacker staging tools for post-exploitation.',
+    ],
+    actions: [
+      'Step 1: **Identify Tool and Host.** Determine the unauthorized tool and the host it is running on.',
+      'Step 2: **Verify Legitimacy.** Contact the host owner/manager to verify the tool\'s purpose.',
+      'Step 3: **Containment.** If unauthorized, immediately isolate the host and remove the tool.',
+      'Step 4: **Policy Enforcement.** Update application whitelisting/blacklisting policies to prevent future execution.',
+      'Step 5: **Compliance Reporting.** Document the violation against the relevant CIS Control for compliance reporting.',
+    ],
+    queries: [
+      { tool: 'EDR/FIM', query: 'process_name IN ("nmap.exe", "teamviewer.exe") AND file_path NOT IN (approved_paths)' },
+    ],
+    tools: ['EDR Console', 'Asset Inventory', 'Compliance Reporting Tools'],
+    escalation: 'Medium priority. Focus on policy enforcement and hygiene.',
+  },
 ];
 
 export const categories: AlertCategory[] = [
@@ -4130,5 +4198,6 @@ export const categories: AlertCategory[] = [
   'Data & Insider Threat', 
   'Threat Intelligence & External', 
   'SIEM & System Alerts', 
-  'Incident Response / Automation Triggers'
+  'Incident Response / Automation Triggers',
+  'SOC Frameworks & Core Security Tools' // New Category
 ];
