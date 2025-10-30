@@ -1,11 +1,11 @@
 import React from 'react';
-import { TerminalSquare, Filter, BookOpen, GraduationCap } from 'lucide-react';
+import { TerminalSquare, Filter, BookOpen, GraduationCap, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface SidebarNavigationProps {
-  activeTab: 'filters' | 'tools' | 'terms';
-  setActiveTab: (tab: 'filters' | 'tools' | 'terms') => void;
+  activeTab: 'filters' | 'tools' | 'terms' | 'scenarios';
+  setActiveTab: (tab: 'filters' | 'tools' | 'terms' | 'scenarios') => void;
 }
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ activeTab, setActiveTab }) => {
@@ -43,6 +43,15 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ activeTab, setAct
       >
         <GraduationCap className="w-4 h-4 mr-3" />
         Must-Know SOC Terms
+      </Button>
+      
+      <Button
+        variant="ghost"
+        className={cn(baseClasses, activeTab === 'scenarios' ? activeClasses : inactiveClasses)}
+        onClick={() => setActiveTab('scenarios')}
+      >
+        <Activity className="w-4 h-4 mr-3" />
+        Real SOC Scenarios
       </Button>
     </div>
   );

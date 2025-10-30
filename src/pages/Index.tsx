@@ -4,11 +4,12 @@ import PlaybookView from "@/components/PlaybookView";
 import ToolDictionary from "@/components/ToolDictionary";
 import SidebarNavigation from "@/components/SidebarNavigation";
 import SocTerms from '@/components/SocTerms';
+import SocScenarios from '@/components/SocScenarios'; // Import the new component
 import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'filters' | 'tools' | 'terms'>('filters');
+  const [activeTab, setActiveTab] = useState<'filters' | 'tools' | 'terms' | 'scenarios'>('filters');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -26,6 +27,10 @@ const Index = () => {
       case 'terms':
         return (
           <SocTerms />
+        );
+      case 'scenarios':
+        return (
+          <SocScenarios />
         );
       default:
         return null;
