@@ -5,6 +5,7 @@ import { BookOpen, Zap, Shield, Terminal, ChevronRight, GraduationCap, ArrowLeft
 import { Button } from '@/components/ui/button';
 import TermList from './TermList';
 import PortList from './PortList';
+import AttackList from './AttackList'; // Import the new component
 import { coreTerms } from '@/data/socTermsData';
 
 interface TermCategory {
@@ -79,6 +80,12 @@ const SocTerms: React.FC = () => {
           />
         );
       case 'attacks':
+        return (
+          <AttackList 
+            title={activeSubCategory.title} 
+            onBack={handleBack} 
+          />
+        );
       case 'protocols':
         return (
           <div className="p-4 space-y-6">
