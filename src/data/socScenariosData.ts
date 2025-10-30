@@ -319,8 +319,155 @@ Escalation Ref: NOVA-GENAI-0623-002`,
       "Final Recommendation": "User review, policy reinforcement, block AI POST",
     }
   },
+  {
+    id: 'credential-stuffing',
+    title: 'Credential Stuffing Detected on External Login Portal via API Gateway',
+    icon: User,
+    color: 'text-red-500',
+    alert: {
+      name: 'Multiple Failed Logins via API – Suspected Credential Stuffing',
+      severity: 'Medium',
+      client: 'Digibank M Bhd',
+      source: 'WAF + API Gateway Logs + Threat Intelligence Feeds',
+      endpoint: 'External Login Portal API',
+      user: 'Multiple usernames (faiz.r@digibank.com, aida.k@digibank.com, etc.)',
+      triggerTime: '2025-06-23 02:27 GMT+8',
+    },
+    background: 'MSSP monitors external-facing banking login portals and their APIs for abuse patterns. Alert fired when a burst of login attempts with known breached usernames was detected over HTTPS via the public API endpoint.',
+    correlatedLogs: [
+      {
+        title: 'Log 1: API Gateway Log – Credential Stuffing Pattern',
+        content: {
+          "timestamp": "2025-06-23T02:27:16Z",
+          "endpoint": "/api/v1/auth/login",
+          "sourceIP": "102.215.91.67",
+          "userAgent": "Mozilla/5.0 (Linux; Android 10)",
+          "usernamesAttempted": "faiz.r@digibank.com, aida.k@digibank.com, badrul.h@digibank.com (and 195 others)",
+          "totalAttempts": 198,
+          "successCount": 0,
+          "method": "POST",
+          "location": "Lagos, Nigeria"
+        }
+      },
+      {
+        title: 'Log 2: WAF Alert – Brute Force Signature',
+        content: {
+          "timestamp": "2025-06-23T02:28:01Z",
+          "sourceIP": "102.215.91.67",
+          "attackType": "Credential Stuffing",
+          "ruleID": "WAF-CREDSTUFF-014",
+          "detectedURIs": "/api/v1/auth/login",
+          "actionTaken": "Blocked after 100 requests",
+          "confidence": "High"
+        }
+      },
+      {
+        title: 'Log 3: Threat Intelligence Enrichment (IOC Lookup)',
+        content: {
+          "ip": "102.215.91.67",
+          "feedName": "Credential Abuse Proxy - Africa Region",
+          "riskScore": "92",
+          "firstSeen": "2025-05-12",
+          "associatedThreat": "Automated Credential Stuffing Infrastructure"
+        }
+      }
+    ],
+    workflow: [
+      {
+        title: 'Step 1: Triage – L1 Analyst',
+        content: 'The L1 analyst reviews the initial alert and correlated logs to determine the immediate threat level and required escalation path.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Are these failed logins consistent with brute force or credential stuffing?', 'Yes', 'Multiple usernames, same endpoint, short time window'],
+            ['Are there any successful logins from the same IP?', 'No', 'All login attempts failed'],
+            ['Was the request blocked?', 'Yes', 'WAF blocked at threshold of 100 attempts'],
+            ['Escalation Decision', 'Escalate to L2', 'Escalate to L2 for deeper review and threat validation'],
+          ]
+        }
+      },
+      {
+        title: 'Step 2: Deep Analysis – L2 Analyst',
+        content: 'The L2 analyst performs deeper investigation using threat intelligence and forensic data to confirm the attack vector and scope.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Does the IP match known malicious infrastructure?', 'Yes', 'TI feed match with high confidence'],
+            ['Were multiple unique usernames tried in sequence from same source?', 'Yes', 'Indicates enumeration/stuffing'],
+            ['Were all login attempts unsuccessful?', 'Yes', 'No user sessions established'],
+            ['Did the WAF respond correctly and within limits?', 'Yes', 'Block triggered as per rule threshold'],
+            ['Is there a known pattern or reused email addresses (from breaches)?', 'Yes', '6 emails matched breach database'],
+            ['Any repeat activity from same IP in the last 7 days?', 'Yes', 'Seen 3 times on finance clients'],
+          ]
+        }
+      },
+      {
+        title: 'Step 3: Decision – Escalate to Client?',
+        content: 'The L2 analyst determines that the incident warrants immediate client notification due to the sophistication and target.',
+        table: {
+          headers: ['Reason', 'Status'],
+          rows: [
+            ['Repeated automated attempts with breached usernames', 'High Risk'],
+            ['Confirmed credential stuffing infrastructure', 'High Risk'],
+            ['Attack blocked but worth notifying client for visibility and potential password resets', 'Contained but Critical'],
+            ['Could indicate account targeting prior to phishing or MFA bypass attempts', 'High Risk'],
+          ]
+        }
+      },
+    ],
+    escalationSubject: '[HIGH] Credential Stuffing Attack Attempt Blocked on API Login – External Threat from Nigeria',
+    escalationBody: `Dear Digibank Security Operations,
+Our systems have detected and mitigated a credential stuffing attack targeting your login API endpoint. Below are the key details of the attempted activity:
+
+**Incident Summary**
+• Time of Attempt: 2025-06-23 02:27 GMT+8
+• Source IP: 102.215.91.67 (Nigeria – listed in credential abuse TI feed)
+• Endpoint Targeted: /api/v1/auth/login
+• Total Attempts: 198
+• Usernames Used: faiz.r@digibank.com, aida.k@digibank.com, badrul.h@digibank.com, others
+• Success Rate: 0 (All failed)
+• WAF Action: Blocked after 100 attempts
+• Reputation Score of IP: 92 (Very High Risk)
+
+**MSSP Observations**
+• Behaviour aligned with automated credential stuffing – rapid POST attempts on multiple known email addresses
+• Source IP tied to known infrastructure used in attacks across financial clients
+• No sessions were established; no evidence of compromise at this time
+• WAF blocking was effective, no bypass detected
+
+**Recommendations**
+1. Force password reset for affected usernames found in leaked datasets
+2. Enhance rate-limiting and anomaly detection for login-related APIs
+3. Review MFA configurations for external logins
+4. Monitor for repeated login attempts from same region/IP over next 7 days
+5. Tag user accounts for fraud watchlisting if needed
+
+**Supporting Data**
+• API logs (POST events with usernames)
+• WAF alert logs with rule ID and block confirmation
+• IOC feed entry for malicious IP
+• Threat context from global credential abuse watchlists
+
+Please advise if you require:
+• Temporary geo-blocking policy enforcement
+• Password reset enforcement by MSSP via IAM API
+• Additional monitoring rule changes
+
+Best regards,
+CYSEC MSSP SOC Team
+Escalation Ref: DIGI-CREDSTUFF-0623-003`,
+    finalDocumentation: {
+      "Alert ID": "SIEM-CL-DIGI-202506230227",
+      "Escalation ID": "DIGI-CREDSTUFF-0623-003",
+      "Alert Category": "Credential Abuse (Stuffing)",
+      "Escalated To": "Digibank IR / Fraud Prevention Team",
+      "Severity": "Medium (Elevated to High due to TI match)",
+      "Status": "Escalated – Pending Advisory",
+      "Follow-Up Time": "12 hours or on detection of retry",
+      "Final Recommendation": "Password resets + enhanced detection logic",
+    }
+  },
   // Placeholder scenarios
-  { id: 'credential-stuffing', title: 'Credential Stuffing on API', icon: User, color: 'text-red-500', alert: { name: 'API Brute Force', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'insider-cloud-deletion', title: 'Insider Threat (Cloud File Deletion)', icon: Cloud, color: 'text-orange-500', alert: { name: 'Mass File Deletion', severity: 'Critical', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'service-account-powershell', title: 'Service Account PowerShell Execution', icon: Code, color: 'text-green-500', alert: { name: 'Service Account Anomaly', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'cloud-misconfig-s3', title: 'Cloud Misconfiguration (S3 Exposure)', icon: Cloud, color: 'text-blue-500', alert: { name: 'Public Bucket Detected', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
