@@ -51,7 +51,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ activeTab, setAct
         onClick={() => setActiveTab('scenarios')}
       >
         <Activity className="w-4 h-4 mr-3" />
-        Real SOC Scenarios
+        MSSP SOC Alert Triage & Escalation Workflow (L1–L2)
       </Button>
     </div>
   );

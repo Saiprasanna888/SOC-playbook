@@ -31,7 +31,7 @@ const SocScenarios: React.FC = () => {
     <div className="p-4 transition-opacity duration-500">
       <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl text-foreground mb-6 flex items-center">
         <Activity className="w-8 h-8 mr-3 text-primary" />
-        Real SOC Scenarios
+        MSSP SOC Alert Triage & Escalation Workflow (L1–L2)
       </h1>
       <p className="text-lg text-muted-foreground mt-2 mb-8">
         Practical, real-world incident scenarios to practice triage, investigation, and response workflows.
