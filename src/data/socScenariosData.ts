@@ -909,29 +909,299 @@ Escalation Ref: NEXSYS-S3LEAK-0621-006`,
   },
   {
     id: 'lateral-movement-psexec',
-    title: 'Lateral Movement via PsExec',
+    title: 'Lateral Movement via PsExec – Detected Across Finance Subnet',
     icon: Zap,
     color: 'text-red-500',
-    alert: { name: 'PsExec Usage', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' },
-    background: 'Placeholder',
-    correlatedLogs: [],
-    workflow: [],
-    escalationSubject: 'Placeholder',
-    escalationBody: 'Placeholder',
-    finalDocumentation: {}
+    alert: {
+      name: 'Suspicious Remote Execution Detected – PsExec Lateral Movement',
+      severity: 'High',
+      client: 'Synerdata Finance Group',
+      source: 'EDR (XDR Agent) + Sysmon + Lateral Movement Rule Pack (Sigma Correlation)',
+      endpoint: 'WS-FIN-03',
+      user: 'hruser@synerdata.local',
+      triggerTime: '2025-06-20 00:43 GMT+8',
+    },
+    background: 'Lateral movement detection logic is deployed across the MSSP XDR platform to monitor for administrative tool misuse. Alert triggered when PsExec-like behavior was detected across multiple finance segment workstations from an account not normally associated with IT operations.',
+    correlatedLogs: [
+      {
+        title: 'Log 1: Sysmon Event ID 7045 (Service Installed)',
+        content: {
+          "timestamp": "2025-06-19T16:43:01Z",
+          "sourceHost": "WS-FIN-03",
+          "targetHost": "WS-FIN-05",
+          "user": "hruser@synerdata.local",
+          "serviceName": "PSEXESVC",
+          "imagePath": "C:\\Windows\\PSEXESVC.exe",
+          "parentProcess": "cmd.exe",
+          "commandLine": "psexec \\\\WS-FIN-05 -u hruser -p ***** cmd.exe",
+          "networkProtocol": "SMB"
+        }
+      },
+      {
+        title: 'Log 2: EDR Alert – Remote Execution Pattern',
+        content: {
+          "timestamp": "2025-06-19T16:43:19Z",
+          "user": "hruser@synerdata.local",
+          "originHost": "WS-FIN-03",
+          "targetHost": "WS-FIN-05",
+          "activity": "Remote Service Execution",
+          "toolSignature": "PsExec Behavioural Match",
+          "riskLevel": "High"
+        }
+      },
+      {
+        title: 'Log 3: UEBA Alert – Lateral Movement from Non-IT User',
+        content: {
+          "timestamp": "2025-06-19T16:44:01Z",
+          "user": "hruser@synerdata.local",
+          "behaviour": "Remote Execution / Admin Tool Misuse",
+          "score": 91,
+          "notes": "Account never used in finance subnet or admin execution before"
+        }
+      }
+    ],
+    workflow: [
+      {
+        title: 'Step 1: SOC L1 Triage',
+        content: 'The L1 analyst reviews the initial alert and correlated logs to determine the immediate threat level and required escalation path.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Was a remote command executed using admin tools?', 'Yes', 'PsExec command from WS-FIN-03 to WS-FIN-05'],
+            ['Is the executing user an admin or IT operator?', 'No', 'hruser@synerdata.local is part of HR group only'],
+            ['Did the tool drop or install a service?', 'Yes', 'Service PSEXESVC registered on target endpoint'],
+            ['Escalation Decision', 'Escalate to L2', 'Escalate to L2 for deeper review and correlation'],
+          ]
+        }
+      },
+      {
+        title: 'Step 2: L2 Analysis',
+        content: 'The L2 analyst performs deeper investigation using threat intelligence and forensic data to confirm the attack vector and scope.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Is the account typically used in this network segment?', 'No', 'Never logged into finance hosts before'],
+            ['Was lateral movement tool used (PsExec, WMI, RDP, etc.)?', 'Yes', 'PsExec signature confirmed via logs'],
+            ['Was the activity initiated interactively or via script?', 'Unknown', 'Could be session hijack or compromised creds'],
+            ['Did the action chain stop after one host or continue laterally?', 'Spread to 3 other finance hosts', 'Indicates possible lateral pivot'],
+            ['Is this a known test or red team simulation?', 'No', 'No active red/purple team tasking on record'],
+            ['Does the account have elevated privileges unexpectedly?', 'Yes', 'AD misconfiguration gave HR group Local Admin on finance subnet'],
+          ]
+        }
+      },
+      {
+        title: 'Step 3: Decision – Escalate to Client?',
+        content: 'The L2 analyst determines that the incident warrants immediate client notification due to the sophistication and target.',
+        table: {
+          headers: ['Reason', 'Status'],
+          rows: [
+            ['Unauthorized account used for lateral movement', 'High Risk'],
+            ['Clear signs of internal privilege escalation', 'High Risk'],
+            ['PsExec used without logging via approved jump servers', 'High Risk'],
+            ['High risk of internal compromise or potential ransomware staging', 'High Risk'],
+          ]
+        }
+      },
+    ],
+    escalationSubject: '[HIGH] PsExec-Based Lateral Movement Detected from HR Account to Finance Hosts – Immediate Review Needed',
+    escalationBody: `Dear Synerdata IR Team,
+We have identified suspicious internal lateral movement within your network originating from an HR domain account and targeting finance department endpoints using administrative tools. This behaviour is inconsistent with legitimate activity and may represent account compromise or malicious insider activity.
+
+**Incident Summary**
+• User Account: hruser@synerdata.local
+• Source Host: WS-FIN-03
+• Target Hosts: WS-FIN-05, WS-FIN-06, WS-FIN-08
+• Tool Used: PsExec (detected via service drop + execution logs)
+• Time of First Event: 2025-06-20 00:43 GMT+8
+• Method: Remote execution via SMB and service creation
+• UEBA Score: 91 – High Deviation from normal usage
+
+**Risk Assessment**
+• PsExec behaviour strongly correlates with known lateral movement tactics (MITRE T1021.002)
+• Account used belongs to HR group, which should not have administrative rights in finance subnet
+• Active Directory misconfiguration may have granted elevated privileges unintentionally
+• No legitimate task or automation request logged for this activity
+
+**Recommendations**
+1. Immediately disable or reset credentials for hruser@synerdata.local
+2. Perform a targeted scan on all affected hosts (WS-FIN-03 to 08) for suspicious files or persistence mechanisms
+3. Review AD group membership and GPO policy inheritance to remove HR admin privileges
+4. Initiate investigation for potential credential theft or session hijacking
+5. Enable command-line telemetry alerts on finance subnet temporarily
+
+**Supporting Data**
+• Sysmon logs (service installation and command line parameters)
+• EDR alert metadata matching PsExec execution pattern
+• UEBA analytics showing abnormal behaviour for HR account
+• Device access patterns overlaid with SMB session logs
+
+Please confirm if you would like MSSP team to:
+• Quarantine affected hosts
+• Run SOAR playbook for AD group validation and remediation
+• Deliver full incident report with timeline reconstruction
+
+Best regards,
+CYSEC MSSP SOC Team
+Escalation Ref: SYNERDATA-PSEXEC-0620-007`,
+    finalDocumentation: {
+      "Alert ID": "SIEM-CL-SYNERDATA-202506200043",
+      "Escalation ID": "SYNERDATA-PSEXEC-0620-007",
+      "Alert Category": "Lateral Movement – Admin Tool Misuse",
+      "Escalated To": "Synerdata IR + AD Admin Team",
+      "Severity": "High",
+      "Status": "Escalated – Awaiting Containment Decision",
+      "Follow-Up Time": "1 hour (due to active lateral movement detection)",
+      "Final Recommendation": "Credential reset + subnet scan + AD/GPO review",
+    }
   },
   {
     id: 'mfa-push-fatigue',
-    title: 'MFA Push Fatigue Attack',
+    title: 'MFA Push Fatigue Attack – Repeated MFA Prompts from Compromised Credentials',
     icon: User,
     color: 'text-orange-500',
-    alert: { name: 'MFA Failure Spike', severity: 'Medium', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' },
-    background: 'Placeholder',
-    correlatedLogs: [],
-    workflow: [],
-    escalationSubject: 'Placeholder',
-    escalationBody: 'Placeholder',
-    finalDocumentation: {}
+    alert: {
+      name: 'Excessive MFA Push Prompts – Possible Fatigue Attack',
+      severity: 'High',
+      client: 'Integra Solutions Sdn Bhd',
+      source: 'IdP Logs (Okta) + XDR + UEBA',
+      endpoint: 'Unknown',
+      user: 'tan.wei@integra.my',
+      triggerTime: '2025-06-19 20:06 GMT+8',
+    },
+    background: 'The attacker has acquired valid credentials (likely from phishing or breach dump) and attempts to log in repeatedly, triggering numerous MFA push notifications in hopes the user will accidentally or unknowingly accept one. This type of social engineering is growing in frequency in 2025 and can bypass MFA without technical compromise.',
+    correlatedLogs: [
+      {
+        title: 'Log 1: Okta Authentication Logs',
+        content: {
+          "timestamp": "2025-06-19T12:06:12Z",
+          "username": "tan.wei@integra.my",
+          "ipAddress": "185.244.213.19",
+          "location": "Amsterdam, Netherlands",
+          "authMethod": "Push",
+          "mfaPrompt": "Push Sent",
+          "result": "User Rejected",
+          "device": "Unknown",
+          "application": "Microsoft 365"
+        }
+      },
+      {
+        title: 'Log 2: MFA Frequency Summary (XDR Aggregation)',
+        content: {
+          "user": "tan.wei@integra.my",
+          "pushRequests": 17,
+          "interval": "Between 12:06 and 12:29 UTC",
+          "uniqueIPCount": 2,
+          "finalStatus": "Push Accepted at 12:29:18",
+          "loginResult": "Successful"
+        }
+      },
+      {
+        title: 'Log 3: UEBA Alert – MFA Behavioural Anomaly',
+        content: {
+          "user": "tan.wei@integra.my",
+          "deviationScore": 93,
+          "pattern": "Accepted MFA after rejecting multiple",
+          "loginGeo": "Netherlands",
+          "normalLocation": "Kuala Lumpur, Malaysia",
+          "alertID": "UEBA-MFAFATIGUE-0881"
+        }
+      }
+    ],
+    workflow: [
+      {
+        title: 'Step 1: SOC L1 Triage',
+        content: 'The L1 analyst reviews the initial alert and correlated logs to determine the immediate threat level and required escalation path.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Were there multiple MFA prompts sent in a short timeframe?', 'Yes', '17 prompts in 23 minutes'],
+            ['Was the login ultimately successful?', 'Yes', 'Push accepted at 12:29 UTC'],
+            ['Was the login location expected for the user?', 'No', 'First seen from Netherlands, user normally logs in from KL'],
+            ['Escalation Decision', 'Escalate to L2', 'Escalate to L2 for deeper review and correlation'],
+          ]
+        }
+      },
+      {
+        title: 'Step 2: L2 Analysis',
+        content: 'The L2 analyst performs deeper investigation using threat intelligence and forensic data to confirm the attack vector and scope.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Was the login device recognised or corporate managed?', 'No', 'Device fingerprint not seen before'],
+            ['Did the user normally accept MFA from outside Malaysia?', 'No', 'No historical foreign logins'],
+            ['Was the push accepted manually or auto-approved via integration?', 'Manually', 'User tapped approve at 12:29'],
+            ['Did the user report any suspicious activity or raise a ticket?', 'No', 'No ticket or email logged'],
+            ['Any known phishing or credential breach targeting this user recently?', 'Unknown', 'Phishing campaign ongoing in Malaysia – under investigation'],
+          ]
+        }
+      },
+      {
+        title: 'Step 3: Decision – Escalate to Client?',
+        content: 'The L2 analyst determines that the incident warrants immediate client notification due to the sophistication and target.',
+        table: {
+          headers: ['Reason', 'Status'],
+          rows: [
+            ['Multiple MFA prompts suggest brute-force MFA fatigue', 'High Risk'],
+            ['Login succeeded from unusual region/device after multiple rejections', 'High Risk'],
+            ['No prior international access history', 'High Risk'],
+            ['Potential compromise through social engineering', 'High Risk'],
+          ]
+        }
+      },
+    ],
+    escalationSubject: '[HIGH] Possible Account Compromise via MFA Fatigue Attack – tan.wei@integra.my',
+    escalationBody: `Dear Integra Solutions Security Team,
+We have detected a high-risk authentication pattern involving the user tan.wei@integra.my. The behaviour matches tactics associated with MFA fatigue attacks, where valid credentials are used repeatedly until a user accepts an MFA push notification.
+
+**Incident Summary**
+• User: tan.wei@integra.my
+• Event Type: Repeated MFA Push Prompts
+• Number of Attempts: 17
+• First Rejection: 12:06 UTC
+• Final Accepted Push: 12:29 UTC
+• Login Location: Amsterdam, Netherlands
+• Device: Unknown / unmanaged
+• Normal Location: Kuala Lumpur
+• Tool Detection: Okta + XDR + UEBA
+• UEBA Deviation Score: 93
+
+**Risk Assessment**
+• Behaviour aligns with MFA fatigue techniques (MITRE T1110.003 + T1078.004)
+• The login was successful after multiple rejections, indicating user fatigue or confusion
+• No change request or travel note exists in the system
+• No other sessions from this region in the past 180 days
+
+**Recommendations**
+1. Immediately disable or suspend the account for tan.wei@integra.my
+2. Perform password reset and re-enrolment of MFA device
+3. Engage the user to confirm if access was authorised
+4. Search for any subsequent data access during the session window (12:29–12:45 UTC)
+5. Enable or enforce phishing-resistant MFA (e.g., FIDO2, hardware tokens)
+
+**Supporting Evidence**
+• Okta log extract of MFA pushes and user rejections
+• Final success log timestamp and IP
+• UEBA deviation report with geolocation risk overlay
+• Confirmation of new/unknown device
+
+Please advise if you wish us to:
+• Quarantine the user session via Okta or Microsoft
+• Add account to Threat Watchlist for future login attempts
+• Generate full incident report for regulatory purposes
+
+Best regards,
+CYSEC MSSP SOC Team
+Escalation Ref: INTEGRA-MFAFATIGUE-0619-008`,
+    finalDocumentation: {
+      "Alert ID": "SIEM-CL-INTEGRA-202506192006",
+      "Escalation ID": "INTEGRA-MFAFATIGUE-0619-008",
+      "Alert Category": "Identity Compromise – Social Engineering",
+      "Escalated To": "Integra IR + Identity Management Team",
+      "Severity": "High",
+      "Status": "Escalated – Awaiting Account Disable Confirmation",
+      "Follow-Up Time": "1 hour",
+      "Final Recommendation": "Password reset, MFA re-enrolment, user interview",
+    }
   },
   {
     id: 'ransomware-note',
