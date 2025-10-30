@@ -3,11 +3,12 @@ import Layout from "@/components/Layout";
 import PlaybookView from "@/components/PlaybookView";
 import ToolDictionary from "@/components/ToolDictionary";
 import SidebarNavigation from "@/components/SidebarNavigation";
+import SocTerms from '@/components/SocTerms';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'filters' | 'tools'>('filters');
+  const [activeTab, setActiveTab] = useState<'filters' | 'tools' | 'terms'>('filters');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -21,6 +22,10 @@ const Index = () => {
       case 'tools':
         return (
           <ToolDictionary />
+        );
+      case 'terms':
+        return (
+          <SocTerms />
         );
       default:
         return null;
