@@ -32,7 +32,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ activeTab, setAct
         className={cn(baseClasses, activeTab === 'tools' ? activeClasses : inactiveClasses)}
         onClick={() => setActiveTab('tools')}
       >
-        <BookOpen className="w-4 h-4 mr-3" />
+        <TerminalSquare className="w-4 h-4 mr-3" />
         SOC Tools Dictionary
       </Button>
 
