@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { BookOpen, Zap, Shield, Terminal, ChevronRight, GraduationCap } from 'lucide-react';
+import { BookOpen, Zap, Shield, Terminal, ChevronRight, GraduationCap, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TermList from './TermList';
+import PortList from './PortList';
 import { coreTerms } from '@/data/socTermsData';
 
 interface TermCategory {
@@ -60,14 +61,41 @@ const SocTerms: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (activeSubCategory && activeSubCategory.id === 'terms') {
-    return (
-      <TermList 
-        title={activeSubCategory.title} 
-        data={activeSubCategory.data} 
-        onBack={handleBack} 
-      />
-    );
+  if (activeSubCategory) {
+    switch (activeSubCategory.id) {
+      case 'terms':
+        return (
+          <TermList 
+            title={activeSubCategory.title} 
+            data={activeSubCategory.data} 
+            onBack={handleBack} 
+          />
+        );
+      case 'ports':
+        return (
+          <PortList 
+            title={activeSubCategory.title} 
+            onBack={handleBack} 
+          />
+        );
+      case 'attacks':
+      case 'protocols':
+        return (
+          <div className="p-4 space-y-6">
+            <Button variant="ghost" onClick={handleBack} className="p-0 h-auto text-primary hover:text-primary/80">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Categories
+            </Button>
+            <h2 className="text-3xl font-bold text-foreground flex items-center">
+              <activeSubCategory.icon className={cn("w-6 h-6 mr-3", activeSubCategory.color)} />
+              {activeSubCategory.title}
+            </h2>
+            <p className="text-muted-foreground">Content for {activeSubCategory.title} is coming soon!</p>
+          </div>
+        );
+      default:
+        return null;
+    }
   }
 
   return (
