@@ -1,7 +1,6 @@
 import React from 'react';
 import { TerminalSquare, Zap, Shield, AlertTriangle, Flame, Globe, BookOpen, X, Settings, Brain, ArrowLeft, CheckCircle, Lightbulb, Users, List, ChevronRight, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, slugify } from '@/lib/utils';
 import { socToolCategories, ToolCategory, ToolDetail } from '@/data/socTools';
@@ -16,26 +15,22 @@ interface ToolDetailsViewProps {
 
 const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) => {
   
+  // Helper to map Tailwind color classes to custom glow classes
+  const getGlowClass = (colorClass: string) => {
+    const color = colorClass.replace('text-', '');
+    return `hover:shadow-lg hover:shadow-${color}/50 hover:border-${color}`;
+  };
+
+  // Note: We need a way to scroll the main content area, not a dialog.
+  // Since this component will be rendered inside the main content, we rely on the browser's scroll.
   const scrollToId = (id: string) => {
     const element = document.getElementById(id) as HTMLElement | null;
-    const container = document.querySelector('.soc-tools-dialog-content') as HTMLElement | null;
-
-    if (element && container) {
-      // Calculate the position relative to the container's current scroll position
-      const targetScrollTop = element.offsetTop - container.offsetTop;
-      
-      container.scrollTo({
-        top: targetScrollTop - 20, // Small offset for padding
+    if (element) {
+      window.scrollTo({
+        top: element.offsetTop - 80, // Offset for fixed header/sticky bar
         behavior: 'smooth',
       });
     }
-  };
-
-  // Helper to map Tailwind color classes to custom glow classes
-  const getGlowClass = (colorClass: string) => {
-    // Example: 'text-orange-600' -> 'hover:shadow-orange-600/50'
-    const color = colorClass.replace('text-', '');
-    return `hover:shadow-lg hover:shadow-${color}/50 hover:border-${color}`;
   };
 
   return (
@@ -53,8 +48,8 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
       
       <Separator />
 
-      {/* Horizontal Index Bar */}
-      <div className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm border-b border-border/50 py-3 -mx-6 px-6">
+      {/* Horizontal Index Bar (Sticky) */}
+      <div className="sticky top-16 z-10 bg-card/90 backdrop-blur-sm border-b border-border/50 py-3 -mx-6 px-6">
         <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
           {category.details.map((tool) => {
             const id = slugify(tool.name);
@@ -208,105 +203,72 @@ const ToolDetailsView: React.FC<ToolDetailsViewProps> = ({ category, onBack }) =
 };
 
 // --- Main Component ---
-const SocCoreToolsMenu: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
+const ToolDictionary: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = React.useState<ToolCategory | null>(null);
 
   const handleCategoryClick = (category: ToolCategory) => {
-    if (category.details.length > 0) {
-      setSelectedCategory(category);
-    }
+    setSelectedCategory(category);
+    // Scroll to top when category changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
     setSelectedCategory(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => {
-      setOpen(o);
-      if (!o) setSelectedCategory(null); // Reset view when closing
-    }}>
-      <DialogTrigger asChild>
-        <Button 
-          variant="default" 
-          className="w-full lg:w-auto flex items-center justify-center 
-                     bg-primary hover:bg-primary/90 text-primary-foreground 
-                     transition-all duration-500 
-                     shadow-xl hover:shadow-2xl hover:scale-[1.03] 
-                     hover:ring-4 hover:ring-primary/50 hover:animate-pulse-once"
-        >
-          <TerminalSquare className="w-4 h-4 mr-2" />
-          SOC Core Security Tools
-        </Button>
-      </DialogTrigger>
-      <DialogContent 
-        className={cn(
-          "sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-6 bg-card border-border/50", 
-          "fixed inset-0 w-full h-full sm:w-auto sm:h-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2", // Ensure it centers on desktop/tablet
-          selectedCategory ? "soc-tools-dialog-content" : ""
-        )}
-      >
-        <DialogHeader className="border-b border-border/50 pb-4">
-          <DialogTitle className="text-2xl font-bold flex items-center text-foreground">
-            <TerminalSquare className="w-5 h-5 mr-3 text-primary" />
-            {selectedCategory ? selectedCategory.title : 'SOC Core Security Tools Dictionary'}
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">
-            {selectedCategory ? `Detailed overview of ${selectedCategory.title}` : 'Explore key tools, platforms, and frameworks used in modern Security Operations Centers.'}
-          </p>
-        </DialogHeader>
-        
-        {selectedCategory ? (
-          <ToolDetailsView category={selectedCategory} onBack={handleBack} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
-            {socToolCategories.map((category) => (
-              <Card 
-                key={category.title} 
-                className={cn(
-                  "group transition-all duration-300 hover:shadow-primary/50 hover:shadow-lg border-border/50",
-                  category.details.length > 0 ? "cursor-pointer hover:border-primary/80 hover:scale-[1.02] hover:translate-y-[-2px]" : "opacity-60 cursor-default"
-                )}
-                onClick={() => handleCategoryClick(category)}
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg font-semibold text-foreground">
-                    {category.title}
-                  </CardTitle>
-                  <category.icon className={cn("h-6 w-6 transition-colors duration-300", category.color, "group-hover:text-primary")} />
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {category.description}
-                  </p>
-                  <Button 
-                    variant="link" 
-                    className={cn("p-0 h-auto mt-2", category.details.length > 0 ? "text-primary" : "text-muted-foreground cursor-default")}
-                    disabled={category.details.length === 0}
-                  >
-                    {category.details.length > 0 ? (
-                      <>
-                        View {category.details.length} Tools <ChevronRight className="w-4 h-4 ml-1" />
-                      </>
-                    ) : (
-                      'Coming Soon'
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-        
-        <div className="flex justify-end pt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            <X className="w-4 h-4 mr-2" /> Close
-          </Button>
+    <div className="p-4 transition-opacity duration-500">
+      <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl text-foreground mb-6">
+        {selectedCategory ? selectedCategory.title : 'SOC Core Security Tools Dictionary'}
+      </h1>
+      <p className="text-lg text-muted-foreground mt-2 mb-8">
+        {selectedCategory ? selectedCategory.description : 'Explore key tools, platforms, and frameworks used in modern Security Operations Centers.'}
+      </p>
+
+      {selectedCategory ? (
+        <ToolDetailsView category={selectedCategory} onBack={handleBack} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
+          {socToolCategories.map((category) => (
+            <Card 
+              key={category.title} 
+              className={cn(
+                "group transition-all duration-300 hover:shadow-primary/50 hover:shadow-lg border-border/50",
+                category.details.length > 0 ? "cursor-pointer hover:border-primary/80 hover:scale-[1.02] hover:translate-y-[-2px]" : "opacity-60 cursor-default"
+              )}
+              onClick={() => handleCategoryClick(category)}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-semibold text-foreground">
+                  {category.title}
+                </CardTitle>
+                <category.icon className={cn("h-6 w-6 transition-colors duration-300", category.color, "group-hover:text-primary")} />
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {category.description}
+                </p>
+                <Button 
+                  variant="link" 
+                  className={cn("p-0 h-auto mt-2", category.details.length > 0 ? "text-primary" : "text-muted-foreground cursor-default")}
+                  disabled={category.details.length === 0}
+                >
+                  {category.details.length > 0 ? (
+                    <>
+                      View {category.details.length} Tools <ChevronRight className="w-4 h-4 ml-1" />
+                    </>
+                  ) : (
+                    'Coming Soon'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   );
 };
 
-export default SocCoreToolsMenu;
+export default ToolDictionary;
