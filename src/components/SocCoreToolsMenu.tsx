@@ -240,7 +240,13 @@ const SocCoreToolsMenu: React.FC = () => {
           SOC Core Security Tools
         </Button>
       </DialogTrigger>
-      <DialogContent className={cn("sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-6 bg-card border-border/50", selectedCategory ? "soc-tools-dialog-content" : "")}>
+      <DialogContent 
+        className={cn(
+          "sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-6 bg-card border-border/50", 
+          "fixed inset-0 w-full h-full sm:w-auto sm:h-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2", // Ensure it centers on desktop/tablet
+          selectedCategory ? "soc-tools-dialog-content" : ""
+        )}
+      >
         <DialogHeader className="border-b border-border/50 pb-4">
           <DialogTitle className="text-2xl font-bold flex items-center text-foreground">
             <TerminalSquare className="w-5 h-5 mr-3 text-primary" />
