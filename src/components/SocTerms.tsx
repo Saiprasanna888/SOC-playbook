@@ -5,7 +5,8 @@ import { BookOpen, Zap, Shield, Terminal, ChevronRight, GraduationCap, ArrowLeft
 import { Button } from '@/components/ui/button';
 import TermList from './TermList';
 import PortList from './PortList';
-import AttackList from './AttackList'; // Import the new component
+import AttackList from './AttackList';
+import ProtocolList from './ProtocolList'; // Import the new component
 import { coreTerms } from '@/data/socTermsData';
 
 interface TermCategory {
@@ -88,17 +89,10 @@ const SocTerms: React.FC = () => {
         );
       case 'protocols':
         return (
-          <div className="p-4 space-y-6">
-            <Button variant="ghost" onClick={handleBack} className="p-0 h-auto text-primary hover:text-primary/80">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Categories
-            </Button>
-            <h2 className="text-3xl font-bold text-foreground flex items-center">
-              <activeSubCategory.icon className={cn("w-6 h-6 mr-3", activeSubCategory.color)} />
-              {activeSubCategory.title}
-            </h2>
-            <p className="text-muted-foreground">Content for {activeSubCategory.title} is coming soon!</p>
-          </div>
+          <ProtocolList 
+            title={activeSubCategory.title} 
+            onBack={handleBack} 
+          />
         );
       default:
         return null;
