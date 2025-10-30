@@ -176,8 +176,150 @@ Escalation Ref: QD-GUIAUTOMATION-0613-021`,
       "Final Recommendation": "Phishing hardening + script filtering + IOC blocklist update",
     }
   },
+  {
+    id: 'genai-dlp',
+    title: 'Generative AI Misuse – File Upload to Public Chatbot via Corporate Endpoint',
+    icon: MessageSquare,
+    color: 'text-purple-500',
+    alert: {
+      name: 'Confidential Data Posted to External AI Tool',
+      severity: 'High',
+      client: 'NovaEnergy Utilities Sdn Bhd',
+      source: 'Endpoint DLP + DNS Logs + Browser Monitoring (via XDR & Proxy)',
+      endpoint: 'HR-LAPTOP-07',
+      user: 'suraya.amin@novaenergy.com',
+      triggerTime: '2025-06-23 11:44 GMT+8',
+    },
+    background: 'MSSP deployed browser telemetry and DLP policies to monitor traffic to Generative AI endpoints like ChatGPT, Claude, Gemini and open-source front ends. Alert fired when confidential document data was uploaded to a known AI input form from a corporate endpoint.',
+    correlatedLogs: [
+      {
+        title: 'Log 1: Endpoint Activity Log (XDR Agent)',
+        content: {
+          "timestamp": "2025-06-23T03:44:12Z",
+          "hostname": "HR-LAPTOP-07",
+          "user": "suraya.amin@novaenergy.com",
+          "fileName": "Salary-Banding-Q3-Confidential.xlsx",
+          "action": "Opened",
+          "process": "excel.exe",
+          "md5": "b64f9abcb812d94d337aa0b92e1905d2"
+        }
+      },
+      {
+        title: 'Log 2: Web Request (Browser Telemetry via Secure Proxy)',
+        content: {
+          "timestamp": "2025-06-23T03:44:27Z",
+          "user": "suraya.amin@novaenergy.com",
+          "url": "https://aiassist.chat.openmodelai.org",
+          "method": "POST",
+          "uploadedContent": "salary banding table",
+          "sourceDevice": "HR-LAPTOP-07",
+          "browser": "Edge 119.0",
+          "contentType": "application/vnd.ms-excel",
+          "documentHash": "b64f9abcb812d94d337aa0b92e1905d2"
+        }
+      },
+      {
+        title: 'Log 3: DNS + Threat Intelligence Enrichment',
+        content: {
+          "dnsQuery": "aiassist.chat.openmodelai.org",
+          "threatCategory": "Generative AI - Unauthorised",
+          "reputation": "Monitored – Custom Policy Violation",
+          "matchedPolicy": "No AI Upload for HR Documents"
+        }
+      }
+    ],
+    workflow: [
+      {
+        title: 'Step 1: Validate Alert – L1 Analyst',
+        content: 'The L1 analyst confirms the DLP violation and verifies the file hash match between the endpoint activity and the web request.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Is this a valid DLP policy violation?', 'Yes', 'Match on sensitive HR data file with corporate classification tag'],
+            ['Was the file hash matched to actual upload?', 'Yes', 'Same hash from XDR and upload logs'],
+            ['Was the user operating on corporate device, not BYOD?', 'Yes', 'Device: HR-LAPTOP-07 (in asset inventory)'],
+            ['Escalation Decision', 'Escalate to L2', 'Escalate to L2 for deeper analysis'],
+          ]
+        }
+      },
+      {
+        title: 'Step 2: L2 Analysis – Contextual Behaviour Review',
+        content: 'The L2 analyst reviews the context of the file and the destination to assess the risk and intentionality.',
+        table: {
+          headers: ['Question', 'Answer', 'Notes'],
+          rows: [
+            ['Was the file classified as confidential internally?', 'Yes', 'Tag: HR - Internal Only'],
+            ['Was the destination listed under restricted AI tools?', 'Yes', 'Listed in DLP Policy #AIBlock-002'],
+            ['Was the user warned or prompted before upload?', 'No', 'No blocking control triggered'],
+            ['Was this action intentional or accidental (based on behaviour)?', 'Unknown', 'Needs user confirmation'],
+            ['Has this user triggered similar events before?', 'No', 'First offence'],
+          ]
+        }
+      },
+      {
+        title: 'Step 3: Decision – Escalate to Client?',
+        content: 'The L2 analyst determines that the incident warrants immediate client notification due to the sensitivity of the data and compliance risks.',
+        table: {
+          headers: ['Reason', 'Status'],
+          rows: [
+            ['Clear DLP violation', 'High Risk'],
+            ['Upload of sensitive HR document to unauthorised Generative AI site', 'High Risk'],
+            ['Could result in unintentional data leakage or ingestion into AI model', 'High Risk'],
+            ['Potential breach of PDPA and internal data handling policies', 'Compliance Risk'],
+          ]
+        }
+      },
+    ],
+    escalationSubject: '[HIGH] Confidential HR Data Uploaded to Public AI Tool – User suraya.amin@novaenergy.com',
+    escalationBody: `Dear NovaEnergy SOC Team,
+
+This is to inform you that our monitoring tools have detected a Data Loss Prevention (DLP) violation involving confidential HR data and the use of an external Generative AI platform. The incident details are as follows:
+
+**Incident Summary**
+• User: suraya.amin@novaenergy.com
+• Device: HR-LAPTOP-07
+• File Involved: Salary-Banding-Q3-Confidential.xlsx
+• Destination Site: https://aiassist.chat.openmodelai.org
+• Action: File data submitted via POST request
+• Time: 2025-06-23 11:44 GMT+8
+
+**Risk Summary**
+• The file is tagged as Confidential – Internal Use Only and contains salary banding data for Q3.
+• The destination platform is not sanctioned by NovaEnergy and is listed under the prohibited GenAI endpoint category.
+• The upload was performed from a corporate-managed device using a secure browser, indicating possible unintentional data exposure or tool misuse.
+
+**Recommendations**
+1. Immediately engage the user for clarification (was it intentional or testing-related?).
+2. Restrict access to AI-related endpoints temporarily for user or department.
+3. Review and enhance AI usage policy enforcement through SOAR or inline proxy control.
+4. Classify incident under “Policy Violation – External Data Disclosure” and assess whether notification to PDPA compliance team is required.
+
+**Supporting Artifacts**
+• XDR file access log (Excel opened with MD5 hash)
+• Web telemetry: POST to AI chatbot with document hash match
+• DNS categorisation confirming unsanctioned endpoint
+• Policy reference: AI-Block-002, DLP-Browser-Rule-11
+
+Please confirm if you would like us to:
+• Quarantine the device for further forensic review
+• Block the user temporarily from accessing corporate tools
+• Include this in monthly compliance violation reporting
+
+Best regards,
+CYSEC MSSP SOC Team
+Escalation Ref: NOVA-GENAI-0623-002`,
+    finalDocumentation: {
+      "Alert ID": "SIEM-CL-NOVA-202506231144",
+      "Escalation ID": "NOVA-GENAI-0623-002",
+      "Alert Category": "DLP + GenAI Tool Use",
+      "Escalated To": "NovaEnergy SOC / HR Security Officer",
+      "Severity": "High",
+      "Status": "Escalated – Pending Client Response",
+      "Follow-Up Time": "3 hours",
+      "Final Recommendation": "User review, policy reinforcement, block AI POST",
+    }
+  },
   // Placeholder scenarios
-  { id: 'genai-dlp', title: 'GenAI Misuse (DLP Violation)', icon: MessageSquare, color: 'text-purple-500', alert: { name: 'DLP Violation', severity: 'Medium', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'credential-stuffing', title: 'Credential Stuffing on API', icon: User, color: 'text-red-500', alert: { name: 'API Brute Force', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'insider-cloud-deletion', title: 'Insider Threat (Cloud File Deletion)', icon: Cloud, color: 'text-orange-500', alert: { name: 'Mass File Deletion', severity: 'Critical', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
   { id: 'service-account-powershell', title: 'Service Account PowerShell Execution', icon: Code, color: 'text-green-500', alert: { name: 'Service Account Anomaly', severity: 'High', client: 'N/A', source: 'N/A', endpoint: 'N/A', user: 'N/A', triggerTime: 'N/A' }, background: 'Placeholder', correlatedLogs: [], workflow: [], escalationSubject: 'Placeholder', escalationBody: 'Placeholder', finalDocumentation: {} },
