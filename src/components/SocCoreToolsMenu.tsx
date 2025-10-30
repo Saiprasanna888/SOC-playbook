@@ -228,7 +228,14 @@ const SocCoreToolsMenu: React.FC = () => {
       if (!o) setSelectedCategory(null); // Reset view when closing
     }}>
       <DialogTrigger asChild>
-        <Button variant="default" className="w-full lg:w-auto flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 shadow-lg hover:shadow-xl">
+        <Button 
+          variant="default" 
+          className="w-full lg:w-auto flex items-center justify-center 
+                     bg-primary hover:bg-primary/90 text-primary-foreground 
+                     transition-all duration-500 
+                     shadow-xl hover:shadow-2xl hover:scale-[1.03] 
+                     hover:ring-4 hover:ring-primary/50 hover:animate-pulse-once"
+        >
           <TerminalSquare className="w-4 h-4 mr-2" />
           SOC Core Security Tools
         </Button>
